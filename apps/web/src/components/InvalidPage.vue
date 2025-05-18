@@ -1,16 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50 flex flex-col">
     <!-- Navigation Bar -->
-    <header class="bg-white shadow sticky top-0 z-10">
-      <div class="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div class="flex items-center">
-          <div class="text-2xl font-bold text-emerald-600 flex items-center">
-            <Share class="mr-2" />
-            <span>ShareFiles</span>
-          </div>
-        </div>
-      </div>
-    </header>
+    <Header />
 
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-8 flex-1 max-w-3xl flex flex-col items-center justify-center">
@@ -77,6 +68,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Share, Home, XCircle, Clock, Trash2, Link, Mail } from 'lucide-vue-next';
+import Header from './Header.vue';
 
 // State
 const errorCode = ref<string>('ERR-404');

@@ -1,27 +1,18 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- 头部导航 -->
-    <header class="bg-white shadow">
-      <div
-        class="container mx-auto px-4 py-4 flex items-center justify-between"
-      >
-        <div class="flex items-center">
-          <div class="text-2xl font-bold text-emerald-600">
-            <FileText class="inline-block mr-2" />
-            Logo
-          </div>
-        </div>
-        <div class="text-lg font-medium text-gray-700">文字分享网站</div>
-      </div>
-    </header>
+    <Header>
+      <template #right>
+        <div @click="goToLibrary" class="cursor-pointer text-lg font-medium text-gray-700">My Library</div>
+      </template>
+    </Header>
 
     <!-- 主要内容 -->
     <main class="container mx-auto px-4 py-8 max-w-3xl">
       <div class="text-center mb-8">
         <h1 class="text-4xl font-bold text-gray-800 mb-3">
-          一键分享你的文字文件
+          一键分享你的JSON文件
         </h1>
-        <h2 class="text-xl text-gray-600">支持多种文本/文档格式</h2>
       </div>
 
       <!-- 上传文件区域 -->
@@ -38,13 +29,12 @@
           ref="fileInput"
           class="hidden"
           @change="onFileSelected"
-          accept=".txt,.md,.docx,.pdf,.rtf"
+          accept=".json"
         />
         <Upload class="h-16 w-16 text-emerald-500 mx-auto mb-4" />
         <p class="text-lg font-medium text-gray-700 mb-2">上传文件区域</p>
         <ul class="text-gray-600 space-y-1">
           <li>• 拖拽或点击选择文件</li>
-          <li>• 支持 .txt .md .docx .pdf .rtf</li>
         </ul>
         <p v-if="selectedFile" class="mt-4 text-emerald-600 font-medium">
           已选择: {{ selectedFile.name }}
@@ -61,10 +51,8 @@
               class="appearance-none bg-white border border-gray-300 rounded-md py-2 pl-3 pr-10 text-gray-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             >
               <option value="1">1 天</option>
-              <option value="3">3 天</option>
               <option value="7">7 天</option>
-              <option value="14">14 天</option>
-              <option value="30">30 天</option>
+              <option value="unlimited">永久</option>
             </select>
             <div
               class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"
@@ -91,8 +79,12 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, FileText, Upload } from "lucide-vue-next";
+import { Share, ChevronDown, FileText, Upload } from "lucide-vue-next";
 import { ref } from "vue";
+import Header from './Header.vue';
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 
 interface FileInfo {
   name: string;
@@ -140,5 +132,9 @@ const shareFile = () => {
     );
     // 这里实际项目中会调用API进行文件上传和分享链接生成
   }
+};
+
+const goToLibrary = () => {
+  router.push("/library");
 };
 </script>

@@ -1,16 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50 flex flex-col">
     <!-- Navigation Bar -->
-    <header class="bg-white shadow sticky top-0 z-10">
-      <div
-        class="container mx-auto px-4 py-4 flex items-center justify-between"
-      >
-        <div class="flex items-center">
-          <div class="text-2xl font-bold text-emerald-600 flex items-center">
-            <FileText class="mr-2" />
-            <span>TextPreview</span>
-          </div>
-        </div>
+     <Header>
+      <template #right>
         <div class="flex space-x-3">
           <button
             @click="handleSave"
@@ -27,30 +19,34 @@
             Download
           </button>
         </div>
-      </div>
-    </header>
+      </template>
+     </Header>
 
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-8 flex-1 max-w-4xl">
-      <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">Text Preview</h1>
-      </div>
 
       <!-- Preview Area -->
       <div class="bg-white rounded-lg shadow-md overflow-hidden">
         <div class="p-4 bg-gray-100 border-b border-gray-200">
           <div class="flex items-center justify-between">
-            <span class="font-medium text-gray-700">Content</span>
-            <span class="text-sm text-gray-500"
-              >{{ text.length }} characters</span
-            >
+            <span class="font-medium text-gray-700">JSON Preview</span>
           </div>
         </div>
-        <textarea
-          v-model="text"
-          class="w-full min-h-[400px] p-4 border-0 focus:outline-none focus:ring-0 rounded-none resize-none"
-          placeholder="Enter your text here for preview..."
-        ></textarea>
+        
+        <div v-if="isLoading" class="p-8 text-center text-gray-600">
+          Loading JSON data...
+        </div>
+        
+        <div v-else-if="error" class="p-8 text-center text-red-600">
+          {{ error }}
+        </div>
+        
+        <json-viewer 
+          v-else 
+          :value="jsonData" 
+          :expand-depth="5" 
+          :expanded="true"
+        ></json-viewer>
       </div>
     </main>
 
@@ -60,29 +56,46 @@
 
 <script setup lang="ts">
 import { Download, FileText, Save } from "lucide-vue-next";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import Footer from "./Footer.vue";
+import Header from './Header.vue';
+import JsonViewer from 'vue-json-viewer'
 
-// State
-const text = ref<string>(
-  "This is a sample text that you can edit. The content will be displayed here for preview."
-);
+const jsonData = ref<any>(null);
+const isLoading = ref(true);
+const error = ref<string | null>(null);
 
-// Methods
-const handleSave = (): void => {
-  // Save functionality would go here
-  alert("Text saved successfully!");
+const loadJsonFile = async () => {
+  try {
+    const response = await fetch('/10mb-sample.json');
+    if (!response.ok) {
+      throw new Error(`Failed to load JSON file: ${response.statusText}`);
+    }
+    jsonData.value = await response.json();
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to load JSON file';
+    console.error('Error loading JSON file:', e);
+  } finally {
+    isLoading.value = false;
+  }
 };
 
+onMounted(() => {
+  loadJsonFile();
+});
+
 const handleDownload = (): void => {
-  // Create a blob with the text content
-  const blob = new Blob([text.value], { type: "text/plain" });
+  // Convert JSON data to a properly formatted string
+  const jsonString = JSON.stringify(jsonData.value, null, 2);
+  
+  // Create a blob with the JSON content
+  const blob = new Blob([jsonString], { type: "application/json" });
   const url = URL.createObjectURL(blob);
 
   // Create a temporary anchor element to trigger the download
   const a = document.createElement("a");
   a.href = url;
-  a.download = "text-preview.txt";
+  a.download = "json-preview.json";
   document.body.appendChild(a);
   a.click();
 
@@ -93,9 +106,5 @@ const handleDownload = (): void => {
 </script>
 
 <style scoped>
-/* Additional custom styles can be added here if needed */
-textarea:focus {
-  outline: none;
-  box-shadow: none;
-}
+@import 'vue-json-viewer/style.css';
 </style>

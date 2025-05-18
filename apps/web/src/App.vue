@@ -1,14 +1,7 @@
-<script setup lang="ts">
-import InvalidPage from "./components/InvalidPage.vue";
-</script>
+<script setup lang="ts"></script>
 
 <template>
-  <!-- <HomePage /> -->
-<!--   <PreviewPage />-->
-<!--  <UserSharingPage></UserSharingPage>-->
-  <InvalidPage></InvalidPage>
+  <router-view></router-view>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>
