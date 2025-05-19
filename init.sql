@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS user_files (
     json_id BIGINT NOT NULL,
     share_id VARCHAR(64),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    expire_at DATETIME,
+    expire_at BIGINT NOT NULL DEFAULT 0,
     is_shared BOOLEAN NOT NULL DEFAULT FALSE,
 
     -- Indexes for better query performance

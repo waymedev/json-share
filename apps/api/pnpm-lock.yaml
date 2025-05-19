@@ -11,6 +11,9 @@ importers:
       '@koa/bodyparser':
         specifier: ^5.1.1
         version: 5.1.1(koa@2.16.1)
+      '@koa/cors':
+        specifier: ^5.0.0
+        version: 5.0.0
       '@koa/multer':
         specifier: ^3.1.0
         version: 3.1.0(multer@1.4.5-lts.2)
@@ -23,9 +26,6 @@ importers:
       drizzle-orm:
         specifier: ^0.43.1
         version: 0.43.1(mysql2@3.14.1)
-      http-errors:
-        specifier: ^2.0.0
-        version: 2.0.0
       koa:
         specifier: ^2.13.4
         version: 2.16.1
@@ -45,6 +45,9 @@ importers:
       '@types/koa-router':
         specifier: ^7.4.8
         version: 7.4.8
+      '@types/koa__cors':
+        specifier: ^5.0.0
+        version: 5.0.0
       '@types/node':
         specifier: ^22.15.18
         version: 22.15.18
@@ -382,6 +385,10 @@ packages:
     peerDependencies:
       koa: ^2.14.1
 
+  '@koa/cors@5.0.0':
+    resolution: {integrity: sha512-x/iUDjcS90W69PryLDIMgFyV21YLTnG9zOpPXS7Bkt2b8AsY3zZsIpOLBkYr9fBcF3HbkKaER5hOBZLfpLgYNw==}
+    engines: {node: '>= 14.0.0'}
+
   '@koa/multer@3.1.0':
     resolution: {integrity: sha512-ETf4OLpOew9XE9lyU+5HIqk3TCmdGAw9pUXgxzrlYip+PkxLGoU4meiVTxiW4B6lxdBNijb3DFQ7M2woLcDL1g==}
     engines: {node: '>= 14'}
@@ -438,6 +445,9 @@ packages:
 
   '@types/koa@2.15.0':
     resolution: {integrity: sha512-7QFsywoE5URbuVnG3loe03QXuGajrnotr3gQkXcEBShORai23MePfFYdhz90FEtBBpkyIYQbVD+evKtloCgX3g==}
+
+  '@types/koa__cors@5.0.0':
+    resolution: {integrity: sha512-LCk/n25Obq5qlernGOK/2LUwa/2YJb2lxHUkkvYFDOpLXlVI6tKcdfCHRBQnOY4LwH6el5WOLs6PD/a8Uzau6g==}
 
   '@types/koa__multer@2.0.7':
     resolution: {integrity: sha512-O7hiAEpdgW1nly93jQ8TVL2nPC7Bg1HHRf1/LGNQb7ygGBjNgZWpliCm7tswNW3MjcgYbTtz0+Sca5wHne+RyA==}
@@ -1373,6 +1383,10 @@ snapshots:
       lodash.merge: 4.6.2
       type-is: 1.6.18
 
+  '@koa/cors@5.0.0':
+    dependencies:
+      vary: 1.1.2
+
   '@koa/multer@3.1.0(multer@1.4.5-lts.2)':
     dependencies:
       multer: 1.4.5-lts.2
@@ -1444,6 +1458,10 @@ snapshots:
       '@types/keygrip': 1.0.6
       '@types/koa-compose': 3.2.8
       '@types/node': 22.15.18
+
+  '@types/koa__cors@5.0.0':
+    dependencies:
+      '@types/koa': 2.15.0
 
   '@types/koa__multer@2.0.7':
     dependencies:
