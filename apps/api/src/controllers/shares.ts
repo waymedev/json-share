@@ -16,8 +16,14 @@ interface FileUploadBody {
 
 router.post("/shares", upload.single("file"), async (ctx: any) => {
   const file = ctx.request.file;
-  const { filename, expiration_days, user_id } = ctx.request
-    .body as FileUploadBody;
+  // get x-user-id from header
+  const user_id = ctx.request.header["x-user-id"];
+  if (!user_id) {
+    ctx.status = 400;
+    ctx.body = { error: "Missing user_id fields" };
+    return;
+  }
+  const { filename, expiration_days } = ctx.request.body as FileUploadBody;
 
   if (!file || !filename) {
     ctx.status = 400;
