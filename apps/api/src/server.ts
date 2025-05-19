@@ -1,14 +1,19 @@
 import { bodyParser } from "@koa/bodyparser";
 import cors from "@koa/cors";
 import Koa from "koa";
-import uploadRouter from "./controllers/shares";
+import Router from "koa-router";
+import { koaSwagger } from "koa2-swagger-ui";
+import shareRouter from "./controllers/shares";
 import { errorHandler } from "./middleware/errorHandler";
-
+import swaggerRouter from "./swagger";
 const app = new Koa();
 const port = process.env.PORT || 3000;
 // 环境判断
 const env =
   process.env.NODE_ENV === "production" ? "production" : "development";
+
+// 路由
+const router = new Router();
 
 // Error Handler
 app.use(errorHandler(env));
@@ -42,12 +47,21 @@ app.on("error", (err, ctx) => {
   }
 });
 
+// Routes
+router.use(shareRouter.routes(), shareRouter.allowedMethods());
+router.use(swaggerRouter.routes(), swaggerRouter.allowedMethods());
+app.use(router.routes());
+
+// swagger UI
+app.use(
+  koaSwagger({
+    routePrefix: "/docs", // 文档访问路径前缀
+    swaggerOptions: { url: "/swagger.json" },
+  })
+);
+
 // Middleware
 app.use(bodyParser());
-
-// Routes
-app.use(uploadRouter.routes());
-app.use(uploadRouter.allowedMethods());
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

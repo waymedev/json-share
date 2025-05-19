@@ -14,6 +14,22 @@ interface FileUploadBody {
   user_id: string;
 }
 
+/**
+ * @openapi
+ * /info:
+ *  get:
+ *    description: 获取基本配置信息
+ *    responses:
+ *      200:
+ *        description: 配置信息对象.
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                host_url:
+ *                  type: string
+ */
 router.post("/shares", upload.single("file"), async (ctx: any) => {
   const file = ctx.request.file;
   // get x-user-id from header
