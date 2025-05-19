@@ -23,6 +23,9 @@ importers:
       drizzle-orm:
         specifier: ^0.43.1
         version: 0.43.1(mysql2@3.14.1)
+      http-errors:
+        specifier: ^2.0.0
+        version: 2.0.0
       koa:
         specifier: ^2.13.4
         version: 2.16.1
