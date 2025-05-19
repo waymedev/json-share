@@ -57,11 +57,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 py-4 mt-auto">
-      <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
-        &copy; {{ new Date().getFullYear() }} ShareFiles. All rights reserved.
-      </div>
-    </footer>
+    <Footer />
   </div>
 </template>
 
@@ -69,6 +65,7 @@
 import { ref } from 'vue';
 import { Share, Home, XCircle, Clock, Trash2, Link, Mail } from 'lucide-vue-next';
 import Header from './Header.vue';
+import Footer from './Footer.vue';
 
 // State
 const errorCode = ref<string>('ERR-404');

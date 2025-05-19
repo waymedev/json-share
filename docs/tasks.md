@@ -4,17 +4,17 @@ This document contains a detailed list of actionable improvement tasks for the J
 
 ## Architecture Improvements
 
-1. [ ] Resolve backend technology stack inconsistencies
+1. [x] Resolve backend technology stack inconsistencies
    - [ ] Decide between Express and Koa for the backend framework
    - [ ] Decide between MongoDB and MySQL for the database
    - [ ] Update documentation to reflect the final decision
 
-2. [ ] Set up proper project structure for the backend
+2. [x] Set up proper project structure for the backend
    - [ ] Initialize backend project in the `apps/api` directory
    - [ ] Set up proper folder structure (controllers, models, routes, middleware, etc.)
    - [ ] Configure environment variables and configuration files
 
-3. [ ] Implement proper frontend routing
+3. [x] Implement proper frontend routing
    - [ ] Install Vue Router
    - [ ] Set up router configuration
    - [ ] Implement route guards for protected routes if needed
@@ -24,7 +24,7 @@ This document contains a detailed list of actionable improvement tasks for the J
    - [ ] Set up stores for managing application state
    - [ ] Implement proper state management patterns
 
-5. [ ] Standardize frontend route naming
+5. [x] Standardize frontend route naming
    - [ ] Resolve inconsistency between `/library` (README.md) and `/my-shares` & `/my-saved` (project.md)
    - [ ] Update documentation to reflect the final decision
 

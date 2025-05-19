@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 flex flex-col">
     <!-- 头部导航 -->
     <Header>
       <template #right>
@@ -74,15 +74,16 @@
         </button>
       </div>
     </main>
-    
+    <Footer></Footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Share, ChevronDown, FileText, Upload } from "lucide-vue-next";
+import { ChevronDown, Upload } from "lucide-vue-next";
 import { ref } from "vue";
 import Header from './Header.vue';
 import { useRouter } from "vue-router";
+import Footer from "./Footer.vue";
 
 const router = useRouter();
 
@@ -96,6 +97,7 @@ const isDragging = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFile = ref<FileInfo | null>(null);
 const expirationDays = ref("7");
+const rawFile = ref<File | null>(null);
 
 const triggerFileInput = () => {
   fileInput.value?.click();
@@ -105,6 +107,7 @@ const onFileSelected = (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (input.files && input.files.length > 0) {
     const file = input.files[0];
+    rawFile.value = file;
     selectedFile.value = {
       name: file.name,
       size: file.size,
@@ -117,6 +120,7 @@ const onFileDrop = (event: DragEvent) => {
   isDragging.value = false;
   if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
     const file = event.dataTransfer.files[0];
+    rawFile.value = file;
     selectedFile.value = {
       name: file.name,
       size: file.size,
@@ -125,12 +129,31 @@ const onFileDrop = (event: DragEvent) => {
   }
 };
 
-const shareFile = () => {
-  if (selectedFile.value) {
-    alert(
-      `文件 "${selectedFile.value.name}" 将在 ${expirationDays.value} 天后过期。分享链接已生成！`
-    );
-    // 这里实际项目中会调用API进行文件上传和分享链接生成
+const shareFile = async () => {
+  if (!selectedFile.value || !rawFile.value) {
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('file', rawFile.value);
+    formData.append('filename', selectedFile.value.name);
+    formData.append('expirationDays', expirationDays.value);
+
+    const response = await fetch('/api/share', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload file');
+    }
+
+    const data = await response.json();
+    alert(`File "${selectedFile.value.name}" has been shared successfully! Share link: ${data.shareLink}`);
+  } catch (error) {
+    console.error('Error sharing file:', error);
+    alert('Failed to share file. Please try again.');
   }
 };
 

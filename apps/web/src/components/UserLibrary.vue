@@ -121,11 +121,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 py-4 mt-auto">
-      <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
-        &copy; {{ new Date().getFullYear() }} ShareFiles. All rights reserved.
-      </div>
-    </footer>
+   <Footer />
   </div>
 </template>
 
@@ -133,6 +129,7 @@
 import { ref, computed } from 'vue';
 import { FileText, Share, Plus, RefreshCw, Link, Clock, Trash2, FileQuestion } from 'lucide-vue-next';
 import Header from './Header.vue';
+import Footer from './Footer.vue';
 
 // Types
 interface SharedFile {
