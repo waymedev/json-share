@@ -3,7 +3,12 @@
     <!-- 头部导航 -->
     <Header>
       <template #right>
-        <div @click="goToLibrary" class="cursor-pointer text-lg font-medium text-gray-700">My Library</div>
+        <div
+          @click="goToLibrary"
+          class="cursor-pointer text-lg font-medium text-gray-700"
+        >
+          My Library
+        </div>
       </template>
     </Header>
 
@@ -66,26 +71,49 @@
       <!-- 分享按钮 -->
       <div class="text-center">
         <button
-          class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors focus:outline-none focus:ring-4 focus:ring-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="!selectedFile"
-          @click="shareFile"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors focus:outline-none focus:ring-4 focus:ring-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
+          :disabled="!selectedFile || isLoading"
+          @click="handleFileShare"
         >
-          开始分享
+          <Loader2 v-if="isLoading" class="animate-spin h-5 w-5 mr-2" />
+          {{ isLoading ? "上传中..." : "开始分享" }}
         </button>
       </div>
     </main>
     <Footer></Footer>
+
+    <!-- Toast -->
+    <Toast
+      :show="showToast"
+      :title="toastTitle"
+      :message="toastMessage"
+      :type="toastType"
+      @close="showToast = false"
+    />
+
+    <!-- Success Modal -->
+    <Modal
+      :show="showModal"
+      title="分享成功"
+      message="文件已成功上传并分享，您可以复制以下链接分享给他人："
+      :share-link="shareLink"
+      @close="handleModalClose"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, Upload } from "lucide-vue-next";
+import { ChevronDown, Upload, Loader2 } from "lucide-vue-next";
 import { ref } from "vue";
-import Header from './Header.vue';
+import Header from "./Header.vue";
 import { useRouter } from "vue-router";
 import Footer from "./Footer.vue";
+import { useFileShare } from "../composables/useFileShare";
+import Toast from "./Toast.vue";
+import Modal from "./Modal.vue";
 
 const router = useRouter();
+const { shareFile, isLoading, error, shareResult } = useFileShare();
 
 interface FileInfo {
   name: string;
@@ -98,6 +126,16 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFile = ref<FileInfo | null>(null);
 const expirationDays = ref("7");
 const rawFile = ref<File | null>(null);
+
+// Toast state
+const showToast = ref(false);
+const toastTitle = ref("");
+const toastMessage = ref("");
+const toastType = ref<"success" | "error">("success");
+
+// Modal state
+const showModal = ref(false);
+const shareLink = ref("");
 
 const triggerFileInput = () => {
   fileInput.value?.click();
@@ -129,31 +167,65 @@ const onFileDrop = (event: DragEvent) => {
   }
 };
 
-const shareFile = async () => {
+const handleFileShare = async () => {
   if (!selectedFile.value || !rawFile.value) {
+    console.warn("File sharing cancelled: No file selected", {
+      selectedFile: selectedFile.value,
+      rawFile: rawFile.value,
+    });
     return;
   }
 
-  try {
-    const formData = new FormData();
-    formData.append('file', rawFile.value);
-    formData.append('filename', selectedFile.value.name);
-    formData.append('expirationDays', expirationDays.value);
+  console.log("Starting file share process", {
+    filename: selectedFile.value.name,
+    fileSize: selectedFile.value.size,
+    fileType: selectedFile.value.type,
+    expirationDays: expirationDays.value,
+  });
 
-    const response = await fetch('/api/share', {
-      method: 'POST',
-      body: formData,
+  const req: ShareRequest = {
+    file: rawFile.value,
+    filename: selectedFile.value.name,
+    expiration_days: expirationDays.value,
+  };
+
+  try {
+    console.log("Sending share request to server...", req);
+    const result = await shareFile(req);
+    console.log("File shared successfully", {
+      shareUrl: result.shareUrl,
+      filename: result.filename,
+      expiresAt: result.expiresAt,
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to upload file');
-    }
+    // Show success modal with formatted share link
+    shareLink.value = result.shareUrl;
+    showModal.value = true;
+  } catch (e) {
+    console.error("File sharing failed", {
+      error: error.value,
+      errorDetails: e,
+      requestData: {
+        filename: selectedFile.value.name,
+        expiration_days: expirationDays.value,
+      },
+    });
 
-    const data = await response.json();
-    alert(`File "${selectedFile.value.name}" has been shared successfully! Share link: ${data.shareLink}`);
-  } catch (error) {
-    console.error('Error sharing file:', error);
-    alert('Failed to share file. Please try again.');
+    // Show error toast
+    toastTitle.value = "分享失败";
+    toastMessage.value = error.value || "文件上传失败，请稍后重试";
+    toastType.value = "error";
+    showToast.value = true;
+  }
+};
+
+const handleModalClose = () => {
+  showModal.value = false;
+  // Reset form
+  selectedFile.value = null;
+  rawFile.value = null;
+  if (fileInput.value) {
+    fileInput.value.value = "";
   }
 };
 
