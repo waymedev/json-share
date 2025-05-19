@@ -1,0 +1,431 @@
+openapi: 3.1.0
+info:
+  title: File Sharing & Library API
+  version: 1.0.0
+  description: |
+    提供文件上传分享与收藏管理功能。
+
+tags:
+  - name: Share
+    description: 文件分享相关接口
+  - name: Saved
+    description: 文件收藏相关接口
+
+paths:
+  /api/shares:
+    post:
+      tags:
+        - Share
+      summary: 上传文件并创建分享
+      description: 接收 multipart/form-data 格式的文件及元数据，返回唯一的 share_id。
+      parameters:
+        - $ref: "#/components/parameters/XUserId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: 要上传的文件
+                filename:
+                  type: string
+                  description: 保存时的文件名
+                expiration_days:
+                  type: integer
+                  description: 可选，过期天数（单位：天）
+              required:
+                - file
+                - filename
+      responses:
+        "200":
+          description: 文件分享成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareSuccessResponse"
+        "400":
+          description: 参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 服务内部错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerErrorResponse"
+
+    get:
+      tags:
+        - Share
+      summary: 获取分享列表
+      description: 分页查询当前用户的分享记录，可根据 expired 过滤是否已过期。
+      parameters:
+        - $ref: "#/components/parameters/XUserId"
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: 当前页码（从 1 开始）
+        - in: query
+          name: size
+          schema:
+            type: integer
+            default: 20
+          description: 每页条数
+        - in: query
+          name: expired
+          schema:
+            type: boolean
+          description: 是否只查询已过期的分享
+      responses:
+        "200":
+          description: 分享列表返回
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharesListResponse"
+        "400":
+          description: 参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 服务内部错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerErrorResponse"
+
+  /api/shares/{id}:
+    get:
+      tags:
+        - Share
+      summary: 获取单个分享内容
+      description: 根据分享记录 ID 获取对应的 JSON 内容。
+      parameters:
+        - $ref: "#/components/parameters/XUserId"
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 分享记录 ID
+      responses:
+        "200":
+          description: 分享详情返回
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareDetailResponse"
+        "500":
+          description: 文件未找到或无效
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerErrorResponse"
+
+    delete:
+      tags:
+        - Share
+      summary: 删除分享记录
+      description: 删除指定的分享记录（软删或硬删由后端决定）
+      parameters:
+        - $ref: "#/components/parameters/XUserId"
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 分享记录 ID
+      responses:
+        "200":
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "500":
+          description: 服务内部错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerErrorResponse"
+
+  /api/saved:
+    post:
+      tags:
+        - Saved
+      summary: 收藏文件
+      description: 根据 share_id 将分享记录加入收藏
+      parameters:
+        - $ref: "#/components/parameters/XUserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                share_id:
+                  type: string
+                  format: uuid
+                  description: 要收藏的分享 ID
+              required:
+                - share_id
+      responses:
+        "200":
+          description: 收藏成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaveFileResponse"
+        "400":
+          description: 参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 服务内部错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerErrorResponse"
+
+    get:
+      tags:
+        - Saved
+      summary: 获取收藏列表
+      description: 分页查询当前用户的收藏记录
+      parameters:
+        - $ref: "#/components/parameters/XUserId"
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: 当前页码（从 1 开始）
+        - in: query
+          name: size
+          schema:
+            type: integer
+            default: 20
+          description: 每页条数
+      responses:
+        "200":
+          description: 收藏列表返回
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedListResponse"
+        "400":
+          description: 参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 服务内部错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerErrorResponse"
+
+  /api/saved/{id}:
+    delete:
+      tags:
+        - Saved
+      summary: 取消收藏
+      description: 删除指定的收藏记录
+      parameters:
+        - $ref: "#/components/parameters/XUserId"
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 收藏记录 ID
+      responses:
+        "200":
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "500":
+          description: 服务内部错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerErrorResponse"
+
+components:
+  parameters:
+    XUserId:
+      name: X-user-id
+      in: header
+      required: true
+      schema:
+        type: string
+      description: 用户 ID
+
+  schemas:
+    ShareSuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            share_id:
+              type: string
+              format: uuid
+              example: ec510aab-69a9-4beb-b7c7-d0f266dce36a
+        message:
+          type: string
+          example: File shared successfully
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: Missing user_id fields
+
+    ServerErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 500
+        error:
+          type: string
+          example: Missing user_id fields
+
+    SharesListResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            list:
+              type: array
+              items:
+                $ref: "#/components/schemas/ShareItem"
+            pagination:
+              $ref: "#/components/schemas/Pagination"
+        message:
+          type: string
+          example: ok
+
+    ShareItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        filename:
+          type: string
+          example: filename.txt
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-05-19T15:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-05-19T16:00:00Z"
+        share_id:
+          type: string
+          format: uuid
+          example: ec510aab-69a9-4beb-b7c7-d0f266dce36a
+        is_shared:
+          type: boolean
+          example: true
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 2
+        size:
+          type: integer
+          example: 20
+        total_records:
+          type: integer
+          example: 125
+        total_pages:
+          type: integer
+          example: 7
+
+    ShareDetailResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            json_content:
+              type: string
+              example: "{}"
+        message:
+          type: string
+          example: File shared successfully
+
+    MessageResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: ok
+
+    SaveFileResponse:
+      type: object
+      properties:
+        file_id:
+          type: integer
+          example: 1
+
+    SavedListResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            list:
+              type: array
+              items:
+                $ref: "#/components/schemas/ShareItem"
+            pagination:
+              $ref: "#/components/schemas/Pagination"
+        message:
+          type: string
+          example: ok

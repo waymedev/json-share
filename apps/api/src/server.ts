@@ -1,22 +1,34 @@
 import { bodyParser } from "@koa/bodyparser";
 import cors from "@koa/cors";
+import fs from "fs";
 import Koa from "koa";
 import Router from "koa-router";
 import { koaSwagger } from "koa2-swagger-ui";
-import shareRouter from "./controllers/shares";
-import { errorHandler } from "./middleware/errorHandler";
-import swaggerRouter from "./swagger";
+import path from "path";
+import yaml from "yamljs";
+import shareRouter from "./controllers/shareController";
+import { errorHandler } from "./middlewares";
+import { logger } from "./utils/logger";
+
+// Ensure logs directory exists
+const logsDir = path.join(process.cwd(), "logs");
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
+}
+
 const app = new Koa();
 const port = process.env.PORT || 3000;
 // 环境判断
 const env =
   process.env.NODE_ENV === "production" ? "production" : "development";
 
+// Log startup information
+logger.info(`Starting server in ${env} mode on port ${port}`);
+
+const spec = yaml.load("./openapi.yaml");
+
 // 路由
 const router = new Router();
-
-// Error Handler
-app.use(errorHandler(env));
 
 // CORS
 app.use(
@@ -31,13 +43,31 @@ app.use(
   })
 );
 
+// swagger UI
+app.use(
+  koaSwagger({
+    routePrefix: "/docs", // 文档访问路径前缀
+    swaggerOptions: { spec },
+  })
+);
+
+// Error Handler
+app.use(errorHandler(env));
+
+// Routes
+router.use(shareRouter.routes(), shareRouter.allowedMethods());
+app.use(router.routes());
+
+// Middleware
+app.use(bodyParser());
+
 app.on("error", (err, ctx) => {
   // 区分开发/生产
   if (env === "development") {
-    console.error("Unhandled error occurred:", err);
+    logger.error("Unhandled error occurred:", err);
   } else {
     // 生产环境只记录必要字段
-    console.error({
+    logger.error({
       message: err.message,
       status: err.status || 500,
       path: ctx.path,
@@ -46,22 +76,6 @@ app.on("error", (err, ctx) => {
     });
   }
 });
-
-// Routes
-router.use(shareRouter.routes(), shareRouter.allowedMethods());
-router.use(swaggerRouter.routes(), swaggerRouter.allowedMethods());
-app.use(router.routes());
-
-// swagger UI
-app.use(
-  koaSwagger({
-    routePrefix: "/docs", // 文档访问路径前缀
-    swaggerOptions: { url: "/swagger.json" },
-  })
-);
-
-// Middleware
-app.use(bodyParser());
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

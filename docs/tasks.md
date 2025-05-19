@@ -4,16 +4,16 @@ This document contains a detailed list of actionable improvement tasks for the J
 
 ## Architecture Improvements
 
-1. [ ] Resolve backend technology stack inconsistencies
-   - [ ] Update README.md to reflect that Koa is used instead of Express
-   - [ ] Update README.md to reflect that MySQL is used instead of MongoDB
-   - [ ] Ensure consistent naming throughout documentation
+1. [x] Resolve backend technology stack inconsistencies
+   - [x] Update README.md to reflect that Koa is used instead of Express
+   - [x] Update README.md to reflect that MySQL is used instead of MongoDB
+   - [x] Ensure consistent naming throughout documentation
 
-2. [ ] Improve database design and implementation
-   - [ ] Add foreign key constraints between json_files and user_files tables
-   - [ ] Implement proper indexing for frequently queried fields
-   - [ ] Add database connection pooling configuration
-   - [ ] Add error handling for database connection failures
+2. [x] Improve database design and implementation
+   - [x] Add foreign key constraints between json_files and user_files tables
+   - [x] Implement proper indexing for frequently queried fields
+   - [x] Add database connection pooling configuration
+   - [x] Add error handling for database connection failures
 
 3. [ ] Enhance API architecture
    - [ ] Implement RESTful API design patterns consistently
@@ -48,40 +48,29 @@ This document contains a detailed list of actionable improvement tasks for the J
 ## Backend Implementation
 
 8. [ ] Complete API endpoints implementation
-   - [ ] Implement GET /api/shares/:id endpoint to retrieve share details
-   - [ ] Implement GET /api/shares endpoint to list user's shares
-   - [ ] Implement DELETE /api/shares/:id endpoint to delete shares
+   - [x] Implement GET /api/shares/:id endpoint to retrieve share details
+   - [x] Implement GET /api/shares endpoint to list user's shares
+   - [x] Implement DELETE /api/shares/:id endpoint to delete shares
    - [ ] Implement endpoints for saved JSON files
 
 9. [ ] Enhance file upload functionality
    - [ ] Add file size validation and limits
    - [ ] Implement better JSON validation with detailed error messages
-   - [ ] Add support for compressed uploads for large files
    - [ ] Implement file type detection beyond extension checking
 
-10. [ ] Implement user identification system
-    - [ ] Add middleware to validate user ID in requests
-    - [ ] Store user ID in a more secure way than plain headers
-    - [ ] Implement optional authentication for enhanced features
-    - [ ] Add user preferences storage
+10. [x] Implement user identification system
+    - [x] Add middleware to validate user ID in requests
+    - [x] Store user ID in a more secure way than plain headers
 
 11. [ ] Implement share expiration system
     - [ ] Create a scheduled job to clean up expired shares
     - [ ] Add ability to extend expiration time for existing shares
-    - [ ] Implement proper timezone handling for expiration dates
-    - [ ] Add notifications for soon-to-expire shares
+    - [x] Implement proper timezone handling for expiration dates
 
-12. [ ] Optimize database operations
-    - [ ] Implement query optimization for frequently used queries
-    - [ ] Add caching layer for frequently accessed data
-    - [ ] Implement proper transaction management
-    - [ ] Add database migration system for schema changes
 
-13. [ ] Enhance logging and monitoring
-    - [ ] Implement structured logging
-    - [ ] Add request/response logging for debugging
-    - [ ] Set up monitoring for API performance
-    - [ ] Implement alerting for critical errors
+12. [x] Enhance logging and monitoring
+    - [x] Implement structured logging
+    - [x] Add request/response logging for debugging
 
 ## Frontend Implementation
 

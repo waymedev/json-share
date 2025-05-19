@@ -1,21 +1,19 @@
+import { sql } from "drizzle-orm";
 import {
-  mysqlTable,
-  mysqlSchema,
-  AnyMySqlColumn,
-  index,
-  primaryKey,
   bigint,
-  json,
+  datetime,
+  index,
   int,
+  json,
+  mysqlTable,
+  primaryKey,
+  tinyint,
   unique,
   varchar,
-  datetime,
-  tinyint,
 } from "drizzle-orm/mysql-core";
-import { sql } from "drizzle-orm";
 
-export const jsonFiles = mysqlTable(
-  "json_files",
+export const rawJson = mysqlTable(
+  "raw_json",
   {
     id: bigint({ mode: "number" }).autoincrement().notNull(),
     jsonContent: json("json_content").notNull(),
@@ -23,7 +21,7 @@ export const jsonFiles = mysqlTable(
   },
   (table) => [
     index("idx_ref_count").on(table.refCount),
-    primaryKey({ columns: [table.id], name: "json_files_id" }),
+    primaryKey({ columns: [table.id], name: "raw_json_id" }),
   ]
 );
 
@@ -38,7 +36,10 @@ export const userFiles = mysqlTable(
     createdAt: datetime("created_at", { mode: "string" })
       .default(sql`(CURRENT_TIMESTAMP)`)
       .notNull(),
-    expireAt: bigint("expire_at", { mode: "number" }).notNull(),
+    updatedAt: datetime("updated_at", { mode: "string" })
+      .default(sql`(CURRENT_TIMESTAMP)`)
+      .notNull(),
+    expiredAt: bigint("expired_at", { mode: "number" }).notNull(),
     isShared: tinyint("is_shared").default(0).notNull(),
   },
   (table) => [

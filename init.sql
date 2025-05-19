@@ -5,7 +5,7 @@ CREATE DATABASE IF NOT EXISTS json_share;
 USE json_share;
 
 -- JSON File Table (must be created first due to foreign key reference)
-CREATE TABLE IF NOT EXISTS json_files (
+CREATE TABLE IF NOT EXISTS raw_json (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     json_content JSON NOT NULL,
     ref_count INT NOT NULL DEFAULT 1,
@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS user_files (
     json_id BIGINT NOT NULL,
     share_id VARCHAR(64),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    expire_at BIGINT NOT NULL DEFAULT 0,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expired_at BIGINT NOT NULL DEFAULT 0,
     is_shared BOOLEAN NOT NULL DEFAULT FALSE,
 
     -- Indexes for better query performance
