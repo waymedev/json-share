@@ -6,13 +6,21 @@ The `docker-publish.yml` workflow automatically builds and publishes Docker imag
 
 1. A new release is published on GitHub
 2. The workflow is manually triggered
+3. Code is pushed to the main branch
+
+### Current Configuration
+
+The workflow is currently configured to:
+
+1. Build and publish the API Docker image first
+2. Future enhancements will include building the web image
 
 ### How it works
 
-When a new release is created (e.g., v1.0.0):
+When the workflow is triggered:
 
-1. GitHub Actions will build a Docker image from the Dockerfile in this repository
-2. Multiple tags will be created automatically:
+1. GitHub Actions will build Docker images from the Dockerfiles in the repository
+2. Multiple tags will be created automatically for each image:
    - Full version tag (e.g., `ghcr.io/owner/json-share/json-share-api:1.0.0`)
    - Major.minor tag (e.g., `ghcr.io/owner/json-share/json-share-api:1.0`)
    - Branch reference tag if triggered from a branch
