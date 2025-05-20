@@ -56,16 +56,6 @@
           </button>
         </div>
       </div>
-
-      <!-- Additional Help -->
-      <div class="mt-8 text-center text-gray-500">
-        <p>
-          Need help?
-          <button @click="getSupport" class="text-emerald-600 hover:underline">
-            Contact Support
-          </button>
-        </p>
-      </div>
     </main>
 
     <!-- Footer -->
@@ -74,55 +64,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import {
-  Share,
-  Home,
-  XCircle,
-  Clock,
-  Trash2,
-  Link,
-  Mail,
-} from "lucide-vue-next";
-import Header from "./Header.vue";
+import { Clock, Home, Link, Trash2, XCircle } from "lucide-vue-next";
 import Footer from "./Footer.vue";
-
-// State
-const errorCode = ref<string>("ERR-404");
-const linkId = ref<string>("abc123");
+import Header from "./Header.vue";
 
 // Methods
 const goToHomePage = (): void => {
   // In a real app, you would use Vue Router
   window.location.href = "/";
 };
-
-const contactOwner = (): void => {
-  // In a real app, this would open a contact form or email client
-  alert("Contact form would open here");
-};
-
-const getSupport = (): void => {
-  // In a real app, this would navigate to support page
-  alert("Support page would open here");
-};
-
-// You could also add a method to check if the link is actually expired or invalid
-const checkLinkStatus = async (id: string): Promise<void> => {
-  try {
-    // In a real app, you would make an API call to check the link status
-    // const response = await fetch(`/api/links/${id}`);
-    // const data = await response.json();
-    // Update UI based on the response
-  } catch (error) {
-    console.error("Error checking link status:", error);
-  }
-};
-
-// For demonstration purposes, we could call this on component mount
-// onMounted(() => {
-//   checkLinkStatus(linkId.value);
-// });
 </script>
 
 <style scoped>

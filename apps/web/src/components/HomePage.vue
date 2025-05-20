@@ -114,7 +114,7 @@ import Modal from "./Modal.vue";
 import Toast from "./Toast.vue";
 
 const router = useRouter();
-const { shareFile, isLoading, error, shareResult } = useFileShare();
+const { shareFile, isLoading, error } = useFileShare();
 
 interface FileInfo {
   name: string;

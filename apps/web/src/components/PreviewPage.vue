@@ -83,9 +83,12 @@
 import { Download, Maximize2, Minimize2, Save } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
 import JsonViewer from "vue-json-viewer";
+import { useRouter } from "vue-router";
+import { sharesService } from "../services";
 import Footer from "./Footer.vue";
 import Header from "./Header.vue";
 
+const router = useRouter();
 const jsonData = ref<any>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
@@ -96,17 +99,30 @@ const toggleFullscreen = (): void => {
 };
 
 const loadJsonFile = async () => {
-  // call share service
-
   try {
-    const response = await fetch("/10mb-sample.json");
-    if (!response.ok) {
-      throw new Error(`Failed to load JSON file: ${response.statusText}`);
+    // Extract share ID from URL
+    const pathParts = window.location.pathname.split("/");
+    const shareId = pathParts[pathParts.length - 1];
+
+    try {
+      const response = await sharesService.getShareDetail(shareId);
+      // Parse JSON content from the response
+      jsonData.value = response.json_content
+        ? JSON.parse(response.json_content)
+        : null;
+    } catch (apiError: any) {
+      // Check for error code in the API response
+      if (apiError.code) {
+        router.push("/invalid");
+        return;
+      }
+      throw apiError; // Rethrow to be caught by the outer catch
     }
-    jsonData.value = await response.json();
   } catch (e) {
-    error.value = e instanceof Error ? e.message : "Failed to load JSON file";
-    console.error("Error loading JSON file:", e);
+    error.value = e instanceof Error ? e.message : "Failed to load JSON data";
+    console.error("Error loading JSON data:", e);
+    // Redirect to InvalidPage on error
+    router.push("/invalid");
   } finally {
     isLoading.value = false;
   }
