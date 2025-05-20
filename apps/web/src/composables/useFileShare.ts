@@ -1,20 +1,16 @@
 import { ref } from "vue";
 import {
   sharesService,
-  type ShareResponse,
   type ShareRequest,
+  type ShareResponseData,
 } from "../services/shares";
-import { useUserStore } from "../stores/user";
 
 export const useFileShare = () => {
-  const userStore = useUserStore();
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-  const shareResult = ref<ShareResponse | null>(null);
+  const shareResult = ref<ShareResponseData | null>(null);
 
   const shareFile = async (data: ShareRequest) => {
-    data.userId = userStore.getUserId();
-
     try {
       isLoading.value = true;
       error.value = null;

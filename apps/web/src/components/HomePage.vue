@@ -103,14 +103,15 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, Upload, Loader2 } from "lucide-vue-next";
+import { ChevronDown, Loader2, Upload } from "lucide-vue-next";
 import { ref } from "vue";
-import Header from "./Header.vue";
 import { useRouter } from "vue-router";
-import Footer from "./Footer.vue";
 import { useFileShare } from "../composables/useFileShare";
-import Toast from "./Toast.vue";
+import type { ShareRequest } from "../services/shares";
+import Footer from "./Footer.vue";
+import Header from "./Header.vue";
 import Modal from "./Modal.vue";
+import Toast from "./Toast.vue";
 
 const router = useRouter();
 const { shareFile, isLoading, error, shareResult } = useFileShare();
@@ -176,30 +177,27 @@ const handleFileShare = async () => {
     return;
   }
 
-  console.log("Starting file share process", {
-    filename: selectedFile.value.name,
-    fileSize: selectedFile.value.size,
-    fileType: selectedFile.value.type,
-    expirationDays: expirationDays.value,
-  });
-
   const req: ShareRequest = {
     file: rawFile.value,
     filename: selectedFile.value.name,
-    expiration_days: expirationDays.value,
+    expirationDays:
+      expirationDays.value === "unlimited"
+        ? undefined
+        : parseInt(expirationDays.value),
   };
 
   try {
-    console.log("Sending share request to server...", req);
     const result = await shareFile(req);
-    console.log("File shared successfully", {
-      shareUrl: result.shareUrl,
-      filename: result.filename,
-      expiresAt: result.expiresAt,
-    });
+
+    if (!result) {
+      throw new Error("Failed to get share result");
+    }
 
     // Show success modal with formatted share link
-    shareLink.value = result.shareUrl;
+    const shareId = result.share_id;
+    shareLink.value = shareId
+      ? `${window.location.origin}/share/${shareId}`
+      : "";
     showModal.value = true;
   } catch (e) {
     console.error("File sharing failed", {
@@ -207,7 +205,7 @@ const handleFileShare = async () => {
       errorDetails: e,
       requestData: {
         filename: selectedFile.value.name,
-        expiration_days: expirationDays.value,
+        expirationDays: expirationDays.value,
       },
     });
 

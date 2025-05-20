@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50 flex flex-col">
     <!-- Navigation Bar -->
-    <Header>
+    <Header v-if="!isFullscreen">
       <template #right>
         <div class="flex space-x-3">
           <button
@@ -22,49 +22,82 @@
       </template>
     </Header>
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-8 flex-1 max-w-4xl">
-      <!-- Preview Area -->
-      <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <div class="p-4 bg-gray-100 border-b border-gray-200">
+    <!-- Main Content - Using flex-1 to take available space -->
+    <main
+      class="container mx-auto px-4 py-6 flex-1 max-w-4xl flex flex-col"
+      :class="{ 'px-0 py-0 max-w-none': isFullscreen }"
+    >
+      <!-- Preview Area - Using flex-1 to expand and fill available space -->
+      <div
+        class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col flex-1"
+        :class="{ 'rounded-none shadow-none': isFullscreen }"
+      >
+        <div class="p-4 bg-gray-100 border-b border-gray-200 flex-shrink-0">
           <div class="flex items-center justify-between">
             <span class="font-medium text-gray-700">JSON Preview</span>
+            <button
+              @click="toggleFullscreen"
+              class="p-1 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              aria-label="Toggle fullscreen"
+            >
+              <Maximize2 v-if="!isFullscreen" class="h-5 w-5 text-gray-600" />
+              <Minimize2 v-else class="h-5 w-5 text-gray-600" />
+            </button>
           </div>
         </div>
 
-        <div v-if="isLoading" class="p-8 text-center text-gray-600">
+        <!-- Content area - Using flex-1 to take remaining space -->
+        <div
+          v-if="isLoading"
+          class="p-8 text-center text-gray-600 flex-1 flex items-center justify-center"
+        >
           Loading JSON data...
         </div>
 
-        <div v-else-if="error" class="p-8 text-center text-red-600">
+        <div
+          v-else-if="error"
+          class="p-8 text-center text-red-600 flex-1 flex items-center justify-center"
+        >
           {{ error }}
         </div>
 
-        <json-viewer
+        <div
           v-else
-          :value="jsonData"
-          :expand-depth="5"
-          :expanded="true"
-        ></json-viewer>
+          class="json-viewer-container flex-1 flex overflow-hidden p-4"
+        >
+          <json-viewer
+            :value="jsonData"
+            :expand-depth="5"
+            :expanded="true"
+            class="json-viewer-custom w-full"
+          ></json-viewer>
+        </div>
       </div>
     </main>
 
-    <Footer />
+    <Footer v-if="!isFullscreen" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { Download, FileText, Save } from "lucide-vue-next";
-import { ref, onMounted } from "vue";
+import { Download, Maximize2, Minimize2, Save } from "lucide-vue-next";
+import { onMounted, ref } from "vue";
+import JsonViewer from "vue-json-viewer";
 import Footer from "./Footer.vue";
 import Header from "./Header.vue";
-import JsonViewer from "vue-json-viewer";
 
 const jsonData = ref<any>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
+const isFullscreen = ref(false);
+
+const toggleFullscreen = (): void => {
+  isFullscreen.value = !isFullscreen.value;
+};
 
 const loadJsonFile = async () => {
+  // call share service
+
   try {
     const response = await fetch("/10mb-sample.json");
     if (!response.ok) {
@@ -82,6 +115,30 @@ const loadJsonFile = async () => {
 onMounted(() => {
   loadJsonFile();
 });
+
+const handleSave = (): void => {
+  try {
+    // Create a JSON string with proper formatting
+    const jsonString = JSON.stringify(jsonData.value, null, 2);
+
+    // Create a Blob containing the JSON data
+    const blob = new Blob([jsonString], { type: "application/json" });
+
+    // Create a URL for the Blob
+    const url = URL.createObjectURL(blob);
+
+    // Open the JSON in a new tab
+    window.open(url, "_blank");
+
+    // Clean up the URL object
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 100);
+  } catch (e) {
+    console.error("Error saving JSON:", e);
+    alert("Failed to save JSON data");
+  }
+};
 
 const handleDownload = (): void => {
   // Convert JSON data to a properly formatted string
@@ -106,4 +163,19 @@ const handleDownload = (): void => {
 
 <style scoped>
 @import "vue-json-viewer/style.css";
+
+.json-viewer-custom {
+  height: 100%;
+  overflow: auto !important;
+  max-height: v-bind(
+    'isFullscreen ? "calc(100vh - 60px)" : "calc(100vh - 300px)"'
+  );
+}
+
+/* Target the internal container of the JSON viewer */
+.json-viewer-custom .jv-container {
+  height: 100%;
+  max-height: 100%;
+  overflow: visible;
+}
 </style>
