@@ -368,7 +368,7 @@ paths:
 components:
   parameters:
     XUserId:
-      name: X-user-id
+      name: X-User-ID
       in: header
       required: true
       schema:

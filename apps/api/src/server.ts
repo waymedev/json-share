@@ -35,7 +35,7 @@ app.use(
   cors({
     origin: "*", // 允许所有来源访问
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // 允许的 HTTP 方法
-    allowHeaders: ["Content-Type", "Authorization", "Accept"], // 允许的请求头
+    allowHeaders: ["Content-Type", "Authorization", "Accept", "X-User-ID"], // 允许的请求头
     exposeHeaders: ["WWW-Authenticate", "Server-Authorization"], // 允许浏览器访问的响应头
     maxAge: 5, // 预检请求的有效期，单位为秒
     credentials: true, // 允许发送 Cookie

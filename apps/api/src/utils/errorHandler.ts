@@ -120,7 +120,7 @@ export function handleApiError(
  * @returns 用户 ID 或 null (如果验证失败)
  */
 export function requireUserId(ctx: any): string | null {
-  const userId = ctx.request.header["x-user-id"];
+  const userId = ctx.get("x-user-id");
 
   if (!userId) {
     handleApiError(ctx, ErrorType.MISSING_USER_ID);
