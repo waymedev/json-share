@@ -165,9 +165,9 @@ router.put("/saved/:id", async (ctx) => {
 
   // Update the saved file using the service
   const result = await SavedService.updateSavedFile(id, userId, {
-    fileName: file_name,
-    isShared: is_shared,
-    expirationDays: expiration_days,
+    file_name,
+    is_shared,
+    expiration_days,
   });
 });
 

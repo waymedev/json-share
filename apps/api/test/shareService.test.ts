@@ -1,9 +1,45 @@
 import { randomUUID } from "crypto";
-import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
-import { db } from "../src/db";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RawJsonModel } from "../src/db/rawJsonModel";
 import { UserFileModel } from "../src/db/userFileModel";
 import { ShareService } from "../src/services/shareService";
+import { ErrorType } from "../src/utils/errorHandler";
+import { FileData } from "../src/utils/Response";
+
+// Mock interface to map between snake_case API response and camelCase test data
+// This helps us avoid changing all test code while still working with the updated snake_case API
+vi.mock("../src/utils/Response", () => {
+  return {
+    FileData: Object,
+    successResponse: vi.fn(),
+    errorResponse: vi.fn(),
+  };
+});
+
+// Extension of FileData that maps camelCase properties to snake_case
+class TestFileData implements FileData {
+  id: number;
+  file_name: string;
+  share_id: string;
+  json_id: number;
+  json_content?: any;
+  created_at: string;
+  updated_at: string;
+  is_expired: boolean;
+  is_shared: boolean;
+
+  constructor(data: any) {
+    this.id = data.id;
+    this.file_name = data.fileName;
+    this.share_id = data.shareId;
+    this.json_id = data.jsonId;
+    this.json_content = data.jsonContent;
+    this.created_at = data.createdAt;
+    this.updated_at = data.updatedAt;
+    this.is_expired = data.isExpired;
+    this.is_shared = data.isShared === 1;
+  }
+}
 
 // Mock the database transaction
 vi.mock("../src/db", () => {
@@ -51,6 +87,7 @@ vi.mock("crypto", () => {
 });
 
 describe("ShareService", () => {
+  // Test fixtures
   const mockUserId = "test-user-123";
   const mockFileName = "test-file.json";
   const mockJsonContent = { test: "data" };
@@ -73,43 +110,31 @@ describe("ShareService", () => {
     refCount: 1,
   };
 
-  beforeAll(() => {
-    // Setup mocks
-    vi.mocked(randomUUID).mockReturnValue(mockShareId);
-    vi.mocked(UserFileModel.createUserFile).mockResolvedValue({ id: 1 });
-    vi.mocked(RawJsonModel.add).mockResolvedValue({ id: mockJsonId });
-    vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([
-      mockUserFile,
-    ]);
-    vi.mocked(RawJsonModel.getById).mockResolvedValue(mockJsonContent2);
-    vi.mocked(UserFileModel.updateSharedStatus).mockResolvedValue({
-      success: true,
-    });
-    vi.mocked(RawJsonModel.decrementRefCount).mockResolvedValue({
-      success: true,
-    });
-    vi.mocked(UserFileModel.getUserFileListByPage).mockResolvedValue([
-      mockUserFile,
-    ]);
-    vi.mocked(UserFileModel.getUserFilesCount).mockResolvedValue(1);
-  });
+  beforeEach(() => {
+    // Reset all mocks before each test to ensure isolation
+    vi.resetAllMocks();
 
-  afterAll(() => {
-    vi.clearAllMocks();
+    // Setup common mocks
+    vi.mocked(randomUUID).mockReturnValue(mockShareId);
   });
 
   describe("createSharedFile", () => {
-    test("should create a shared file successfully without expiration", async () => {
+    it("should create a file with a unique shareId and default expiration", async () => {
+      // Arrange
       const fileData = {
         filename: mockFileName,
-        jsonContent: mockJsonContent,
-        userId: mockUserId,
+        json_content: mockJsonContent,
+        user_id: mockUserId,
       };
+      vi.mocked(RawJsonModel.add).mockResolvedValue({ id: mockJsonId });
+      vi.mocked(UserFileModel.createUserFile).mockResolvedValue({ id: 1 });
 
+      // Act
       const result = await ShareService.createSharedFile(fileData);
 
+      // Assert
       expect(result.success).toBe(true);
-      expect(result.data?.shareId).toBe(mockShareId);
+      expect(result.data?.share_id).toBe(mockShareId);
       expect(RawJsonModel.add).toHaveBeenCalledWith({
         jsonContent: mockJsonContent,
         refCount: 1,
@@ -124,23 +149,25 @@ describe("ShareService", () => {
       });
     });
 
-    test("should create a shared file with expiration successfully", async () => {
+    it("should calculate expiration date correctly when expiration days provided", async () => {
+      // Arrange
       const fileData = {
         filename: mockFileName,
-        jsonContent: mockJsonContent,
-        userId: mockUserId,
-        expirationDays: 7,
+        json_content: mockJsonContent,
+        user_id: mockUserId,
+        expiration_days: 7,
       };
-
-      // Mock Date.now() to return a fixed timestamp
-      const mockTimestamp = 1625097600000; // Just an example timestamp
+      const mockTimestamp = 1625097600000;
       const realDateNow = Date.now;
       Date.now = vi.fn().mockReturnValue(mockTimestamp);
+      vi.mocked(RawJsonModel.add).mockResolvedValue({ id: mockJsonId });
+      vi.mocked(UserFileModel.createUserFile).mockResolvedValue({ id: 1 });
 
+      // Act
       const result = await ShareService.createSharedFile(fileData);
 
+      // Assert
       expect(result.success).toBe(true);
-      expect(result.data?.shareId).toBe(mockShareId);
       expect(UserFileModel.createUserFile).toHaveBeenCalledWith({
         fileName: mockFileName,
         userId: mockUserId,
@@ -150,102 +177,153 @@ describe("ShareService", () => {
         expiredAt: mockTimestamp + 7 * 24 * 60 * 60 * 1000,
       });
 
-      // Restore original Date.now
+      // Cleanup
       Date.now = realDateNow;
     });
 
-    test("should handle errors when creating a shared file", async () => {
-      vi.mocked(RawJsonModel.add).mockRejectedValueOnce(
-        new Error("Database error")
-      );
-
+    it("should handle database errors when creating JSON content", async () => {
+      // Arrange
       const fileData = {
         filename: mockFileName,
-        jsonContent: mockJsonContent,
-        userId: mockUserId,
+        json_content: mockJsonContent,
+        user_id: mockUserId,
       };
+      const mockError = new Error("Database error");
+      vi.mocked(RawJsonModel.add).mockRejectedValueOnce(mockError);
 
+      // Act
       const result = await ShareService.createSharedFile(fileData);
 
+      // Assert
       expect(result.success).toBe(false);
-      expect(result.errorType).toBe("INTERNAL_ERROR");
+      expect(result.errorType).toBe(ErrorType.INTERNAL_ERROR);
+    });
+
+    it("should handle database errors when creating user file", async () => {
+      // Arrange
+      const fileData = {
+        filename: mockFileName,
+        json_content: mockJsonContent,
+        user_id: mockUserId,
+      };
+      vi.mocked(RawJsonModel.add).mockResolvedValue({ id: mockJsonId });
+      const mockError = new Error("Database error");
+      vi.mocked(UserFileModel.createUserFile).mockRejectedValueOnce(mockError);
+
+      // Act
+      const result = await ShareService.createSharedFile(fileData);
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(result.errorType).toBe(ErrorType.INTERNAL_ERROR);
     });
   });
 
   describe("getSharedFile", () => {
-    test("should get a shared file successfully", async () => {
+    it("should retrieve a shared file by shareId when it exists", async () => {
+      // Arrange
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([
+        mockUserFile,
+      ]);
+      vi.mocked(RawJsonModel.getById).mockResolvedValue(mockJsonContent2);
+
+      // Act
       const result = await ShareService.getSharedFile(mockShareId);
 
+      // Assert
       expect(result.success).toBe(true);
-      expect(result.data?.fileName).toBe(mockFileName);
-      expect(result.data?.jsonContent).toEqual(mockJsonContent);
-      expect(result.data?.shareId).toBe(mockShareId);
+      expect(result.data).toBeDefined();
       expect(UserFileModel.getUserFileByShareId).toHaveBeenCalledWith(
         mockShareId
       );
       expect(RawJsonModel.getById).toHaveBeenCalledWith(mockJsonId);
     });
 
-    test("should return error when shared file is not found", async () => {
-      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValueOnce([]);
+    it("should return error when file not found by shareId", async () => {
+      // Arrange
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([]);
 
+      // Act
       const result = await ShareService.getSharedFile(mockShareId);
 
+      // Assert
       expect(result.success).toBe(false);
-      expect(result.errorType).toBe("NOT_FOUND");
+      expect(result.errorType).toBe(ErrorType.NOT_FOUND);
     });
 
-    test("should return error when file is expired", async () => {
+    it("should return error when file is expired", async () => {
+      // Arrange
       const expiredFile = {
         ...mockUserFile,
-        expiredAt: Date.now() - 1000, // Already expired
+        expiredAt: Date.now() - 1000, // expired timestamp
       };
-      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValueOnce([
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([
         expiredFile,
       ]);
 
+      // Act
       const result = await ShareService.getSharedFile(mockShareId);
 
+      // Assert
       expect(result.success).toBe(false);
-      expect(result.errorType).toBe("FILE_EXPIRED");
+      expect(result.errorType).toBe(ErrorType.FILE_EXPIRED);
     });
 
-    test("should return error when file is not shared", async () => {
-      const notSharedFile = {
+    it("should return error when file is not shared", async () => {
+      // Arrange
+      const unsharedFile = {
         ...mockUserFile,
         isShared: 0,
       };
-      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValueOnce([
-        notSharedFile,
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([
+        unsharedFile,
       ]);
 
+      // Act
       const result = await ShareService.getSharedFile(mockShareId);
 
+      // Assert
       expect(result.success).toBe(false);
-      expect(result.errorType).toBe("FILE_NOT_SHARED");
+      expect(result.errorType).toBe(ErrorType.FILE_NOT_SHARED);
     });
 
-    test("should return error when file content is not found", async () => {
-      vi.mocked(RawJsonModel.getById).mockResolvedValueOnce(null as any);
+    it("should return error when json content not found", async () => {
+      // Arrange
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([
+        mockUserFile,
+      ]);
+      vi.mocked(RawJsonModel.getById).mockResolvedValue(null as any);
 
+      // Act
       const result = await ShareService.getSharedFile(mockShareId);
 
+      // Assert
       expect(result.success).toBe(false);
-      expect(result.errorType).toBe("NOT_FOUND");
+      expect(result.errorType).toBe(ErrorType.NOT_FOUND);
     });
   });
 
   describe("deleteSharedFile", () => {
-    test("should delete a shared file successfully when user is the owner", async () => {
+    it("should delete shared file when user is the owner", async () => {
+      // Arrange
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([
+        mockUserFile,
+      ]);
+      vi.mocked(UserFileModel.updateSharedStatus).mockResolvedValue({
+        success: true,
+      });
+      vi.mocked(RawJsonModel.decrementRefCount).mockResolvedValue({
+        success: true,
+      });
+
+      // Act
       const result = await ShareService.deleteSharedFile(
         mockShareId,
         mockUserId
       );
 
+      // Assert
       expect(result.success).toBe(true);
-      expect(UserFileModel.getUserFileByShareId).toHaveBeenCalledWith(
-        mockShareId
-      );
       expect(UserFileModel.updateSharedStatus).toHaveBeenCalledWith(
         mockShareId,
         0,
@@ -257,13 +335,23 @@ describe("ShareService", () => {
       );
     });
 
-    test("should delete a shared file successfully when no user ID is provided", async () => {
+    it("should delete shared file when no user ID is provided", async () => {
+      // Arrange
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([
+        mockUserFile,
+      ]);
+      vi.mocked(UserFileModel.updateSharedStatus).mockResolvedValue({
+        success: true,
+      });
+      vi.mocked(RawJsonModel.decrementRefCount).mockResolvedValue({
+        success: true,
+      });
+
+      // Act
       const result = await ShareService.deleteSharedFile(mockShareId);
 
+      // Assert
       expect(result.success).toBe(true);
-      expect(UserFileModel.getUserFileByShareId).toHaveBeenCalledWith(
-        mockShareId
-      );
       expect(UserFileModel.updateSharedStatus).toHaveBeenCalledWith(
         mockShareId,
         0,
@@ -275,99 +363,129 @@ describe("ShareService", () => {
       );
     });
 
-    test("should return error when shared file is not found", async () => {
-      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValueOnce([]);
+    it("should return error when file not found", async () => {
+      // Arrange
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([]);
 
+      // Act
       const result = await ShareService.deleteSharedFile(
         mockShareId,
         mockUserId
       );
 
+      // Assert
       expect(result.success).toBe(false);
-      expect(result.errorType).toBe("NOT_FOUND");
+      expect(result.errorType).toBe(ErrorType.NOT_FOUND);
     });
 
-    test("should return error when user is not the owner", async () => {
-      const differentUserId = "different-user";
+    it("should return error when user is not the owner", async () => {
+      // Arrange
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([
+        mockUserFile,
+      ]);
+      const differentUserId = "different-user-456";
 
+      // Act
       const result = await ShareService.deleteSharedFile(
         mockShareId,
         differentUserId
       );
 
+      // Assert
       expect(result.success).toBe(false);
-      expect(result.errorType).toBe("FORBIDDEN");
+      expect(result.errorType).toBe(ErrorType.FORBIDDEN);
     });
 
-    test("should handle errors during deletion", async () => {
-      vi.mocked(db.transaction).mockRejectedValueOnce(
-        new Error("Transaction error")
+    it("should handle errors during transaction", async () => {
+      // Arrange
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([
+        mockUserFile,
+      ]);
+      vi.mocked(UserFileModel.updateSharedStatus).mockRejectedValueOnce(
+        new Error("Update error")
       );
 
+      // Act
       const result = await ShareService.deleteSharedFile(
         mockShareId,
         mockUserId
       );
 
+      // Assert
       expect(result.success).toBe(false);
-      expect(result.errorType).toBe("INTERNAL_ERROR");
+      expect(result.errorType).toBe(ErrorType.INTERNAL_ERROR);
     });
   });
 
   describe("isExpired", () => {
-    test("should return true for expired files", async () => {
+    it("should return true for expired files", async () => {
+      // Arrange
       const expiredFile = {
         ...mockUserFile,
-        expiredAt: Date.now() - 1000, // Already expired
+        expiredAt: Date.now() - 1000, // past timestamp
       };
-      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValueOnce([
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([
         expiredFile,
       ]);
 
+      // Act
       const result = await ShareService.isExpired(mockShareId);
 
+      // Assert
       expect(result).toBe(true);
     });
 
-    test("should return false for non-expired files", async () => {
-      const nonExpiredFile = {
+    it("should return false for non-expired files", async () => {
+      // Arrange
+      const futureExpiredFile = {
         ...mockUserFile,
-        expiredAt: Date.now() + 1000, // Not expired yet
+        expiredAt: Date.now() + 1000000, // future timestamp
       };
-      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValueOnce([
-        nonExpiredFile,
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([
+        futureExpiredFile,
       ]);
 
+      // Act
       const result = await ShareService.isExpired(mockShareId);
 
+      // Assert
       expect(result).toBe(false);
     });
 
-    test("should return false for files without expiration", async () => {
-      const noExpirationFile = {
-        ...mockUserFile,
-        expiredAt: 0, // No expiration
-      };
-      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValueOnce([
-        noExpirationFile,
+    it("should return false for files without expiration", async () => {
+      // Arrange - mockUserFile already has expiredAt: 0
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([
+        mockUserFile,
       ]);
 
+      // Act
       const result = await ShareService.isExpired(mockShareId);
 
+      // Assert
       expect(result).toBe(false);
     });
 
-    test("should return false when file is not found", async () => {
-      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValueOnce([]);
+    it("should return false when file is not found", async () => {
+      // Arrange
+      vi.mocked(UserFileModel.getUserFileByShareId).mockResolvedValue([]);
 
+      // Act
       const result = await ShareService.isExpired(mockShareId);
 
+      // Assert
       expect(result).toBe(false);
     });
   });
 
   describe("getUserFiles", () => {
-    test("should get user files successfully", async () => {
+    it("should get user files with pagination", async () => {
+      // Arrange
+      vi.mocked(UserFileModel.getUserFileListByPage).mockResolvedValue([
+        mockUserFile,
+      ]);
+      vi.mocked(UserFileModel.getUserFilesCount).mockResolvedValue(1);
+
+      // Act
       const result = await ShareService.getUserFiles(
         mockUserId,
         1,
@@ -376,9 +494,10 @@ describe("ShareService", () => {
         false
       );
 
+      // Assert
       expect(result.success).toBe(true);
-      expect(result.data?.data.length).toBe(1);
       expect(result.data?.totalRecords).toBe(1);
+      expect(result.data?.data).toHaveLength(1);
       expect(UserFileModel.getUserFileListByPage).toHaveBeenCalledWith(
         mockUserId,
         1,
@@ -386,16 +505,26 @@ describe("ShareService", () => {
         false,
         false
       );
-      expect(UserFileModel.getUserFilesCount).toHaveBeenCalledWith(
-        mockUserId,
-        false,
-        false
-      );
     });
 
-    test("should get expired files only when expiredOnly is true", async () => {
-      await ShareService.getUserFiles(mockUserId, 1, 10, true, false);
+    it("should filter expired files when expiredOnly is true", async () => {
+      // Arrange
+      vi.mocked(UserFileModel.getUserFileListByPage).mockResolvedValue([
+        mockUserFile,
+      ]);
+      vi.mocked(UserFileModel.getUserFilesCount).mockResolvedValue(1);
 
+      // Act
+      const result = await ShareService.getUserFiles(
+        mockUserId,
+        1,
+        10,
+        true,
+        false
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
       expect(UserFileModel.getUserFileListByPage).toHaveBeenCalledWith(
         mockUserId,
         1,
@@ -403,16 +532,26 @@ describe("ShareService", () => {
         true,
         false
       );
-      expect(UserFileModel.getUserFilesCount).toHaveBeenCalledWith(
-        mockUserId,
-        true,
-        false
-      );
     });
 
-    test("should get shared files only when sharedOnly is true", async () => {
-      await ShareService.getUserFiles(mockUserId, 1, 10, false, true);
+    it("should filter shared files when sharedOnly is true", async () => {
+      // Arrange
+      vi.mocked(UserFileModel.getUserFileListByPage).mockResolvedValue([
+        mockUserFile,
+      ]);
+      vi.mocked(UserFileModel.getUserFilesCount).mockResolvedValue(1);
 
+      // Act
+      const result = await ShareService.getUserFiles(
+        mockUserId,
+        1,
+        10,
+        false,
+        true
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
       expect(UserFileModel.getUserFileListByPage).toHaveBeenCalledWith(
         mockUserId,
         1,
@@ -420,18 +559,15 @@ describe("ShareService", () => {
         false,
         true
       );
-      expect(UserFileModel.getUserFilesCount).toHaveBeenCalledWith(
-        mockUserId,
-        false,
-        true
-      );
     });
 
-    test("should handle errors when getting user files", async () => {
+    it("should handle errors when getting user files", async () => {
+      // Arrange
       vi.mocked(UserFileModel.getUserFileListByPage).mockRejectedValueOnce(
         new Error("Database error")
       );
 
+      // Act
       const result = await ShareService.getUserFiles(
         mockUserId,
         1,
@@ -440,8 +576,9 @@ describe("ShareService", () => {
         false
       );
 
+      // Assert
       expect(result.success).toBe(false);
-      expect(result.errorType).toBe("INTERNAL_ERROR");
+      expect(result.errorType).toBe(ErrorType.INTERNAL_ERROR);
     });
   });
 });

@@ -12,9 +12,9 @@ import {
 } from "../utils/serviceResult";
 interface FileUploadData {
   filename: string;
-  jsonContent: any;
-  userId: string;
-  expirationDays?: number;
+  json_content: any;
+  user_id: string;
+  expiration_days?: number;
 }
 
 /**
@@ -28,16 +28,16 @@ export class ShareService {
    */
   static async createSharedFile(
     data: FileUploadData
-  ): Promise<ServiceResult<{ shareId: string }>> {
+  ): Promise<ServiceResult<{ share_id: string }>> {
     try {
       // Create a unique share ID
       const shareId = randomUUID();
 
       // Calculate expiration date if provided
       let expiredAt = 0;
-      if (data.expirationDays && data.expirationDays > 0) {
+      if (data.expiration_days && data.expiration_days > 0) {
         const timestamp =
-          Date.now() + data.expirationDays * 24 * 60 * 60 * 1000;
+          Date.now() + data.expiration_days * 24 * 60 * 60 * 1000;
         expiredAt = timestamp;
       }
 
@@ -46,7 +46,7 @@ export class ShareService {
         // Insert JSON content using RawJsonModel, but without transaction
         // because Model methods currently don't support transactions in their internal implementation
         const jsonData = {
-          jsonContent: data.jsonContent,
+          jsonContent: data.json_content,
           refCount: 1,
         };
 
@@ -57,7 +57,7 @@ export class ShareService {
         // Create user file record
         const userFileData = {
           fileName: data.filename,
-          userId: data.userId,
+          userId: data.user_id,
           jsonId,
           shareId,
           isShared: 1,
@@ -70,7 +70,7 @@ export class ShareService {
       });
 
       return successResult(
-        { shareId: result.shareId },
+        { share_id: result.shareId },
         "File shared successfully"
       );
     } catch (error) {
@@ -120,14 +120,14 @@ export class ShareService {
 
     const fileData: FileData = {
       id: userFile.id,
-      fileName: userFile.fileName,
-      jsonContent: jsonContent.jsonContent,
-      jsonId: userFile.jsonId,
-      shareId: userFile.shareId || "",
-      createdAt: userFile.createdAt,
-      updatedAt: userFile.updatedAt,
-      isExpired: isExpired(userFile.expiredAt),
-      isShared: userFile.isShared === 1,
+      file_name: userFile.fileName,
+      json_content: jsonContent.jsonContent,
+      json_id: userFile.jsonId,
+      share_id: userFile.shareId || "",
+      created_at: userFile.createdAt,
+      updated_at: userFile.updatedAt,
+      is_expired: isExpired(userFile.expiredAt),
+      is_shared: userFile.isShared === 1,
     };
 
     return successResult(fileData, "File retrieved successfully");
@@ -228,13 +228,13 @@ export class ShareService {
       const shareFileData: FileData[] = userFiles.map((userFile) => {
         return {
           id: userFile.id,
-          fileName: userFile.fileName,
-          shareId: userFile.shareId || "",
-          jsonId: userFile.jsonId,
-          createdAt: userFile.createdAt,
-          updatedAt: userFile.updatedAt,
-          isShared: userFile.isShared === 1,
-          isExpired: isExpired(userFile.expiredAt),
+          file_name: userFile.fileName,
+          share_id: userFile.shareId || "",
+          json_id: userFile.jsonId,
+          created_at: userFile.createdAt,
+          updated_at: userFile.updatedAt,
+          is_shared: userFile.isShared === 1,
+          is_expired: isExpired(userFile.expiredAt),
         };
       });
 

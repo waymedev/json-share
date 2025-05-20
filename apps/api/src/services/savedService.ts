@@ -22,15 +22,15 @@ export class SavedService {
    * @returns ServiceResult with saved file data
    */
   static async saveFile(
-    shareId: string,
-    userId: string,
-    fileName: string
+    share_id: string,
+    user_id: string,
+    file_name: string
   ): Promise<ServiceResult<{ id: number }>> {
     try {
       // Create user file record
 
       // First verify the shared file exists
-      const sharedFileResult = await ShareService.getSharedFile(shareId);
+      const sharedFileResult = await ShareService.getSharedFile(share_id);
 
       if (!sharedFileResult.success) {
         return errorResult(
@@ -44,9 +44,9 @@ export class SavedService {
       // Create a new record in user_files for the saved file
       // Use the same jsonId as the original file to avoid duplicating content
       const savedFile = {
-        fileName: fileName,
-        userId: userId,
-        jsonId: sharedFileResult.data?.jsonId || 0,
+        fileName: file_name,
+        userId: user_id,
+        jsonId: sharedFileResult.data?.json_id || 0,
         shareId: newShareId,
         isShared: 0,
         expiredAt: 0,
@@ -156,9 +156,9 @@ export class SavedService {
     id: number,
     userId: string,
     updateData: {
-      fileName?: string;
-      isShared?: boolean;
-      expirationDays?: number;
+      file_name?: string;
+      is_shared?: boolean;
+      expiration_days?: number;
     }
   ): Promise<ServiceResult> {
     try {
@@ -175,10 +175,10 @@ export class SavedService {
       // Update the file record with all required properties
       const updatedFile = {
         ...userFile, // Include all existing properties
-        fileName: updateData.fileName || userFile.fileName,
-        isShared: updateData.isShared ? 1 : userFile.isShared,
-        expiredAt: updateData.expirationDays
-          ? Date.now() + updateData.expirationDays * 24 * 60 * 60 * 1000
+        fileName: updateData.file_name || userFile.fileName,
+        isShared: updateData.is_shared ? 1 : userFile.isShared,
+        expiredAt: updateData.expiration_days
+          ? Date.now() + updateData.expiration_days * 24 * 60 * 60 * 1000
           : userFile.expiredAt,
       };
 
@@ -222,14 +222,14 @@ export class SavedService {
 
       const fileData: FileData = {
         id: userFile.id,
-        fileName: userFile.fileName,
-        jsonContent: jsonContent.jsonContent,
-        jsonId: userFile.jsonId,
-        shareId: userFile.shareId || "",
-        createdAt: userFile.createdAt,
-        updatedAt: userFile.updatedAt,
-        isExpired: isExpired(userFile.expiredAt),
-        isShared: userFile.isShared === 1,
+        file_name: userFile.fileName,
+        json_content: jsonContent.jsonContent,
+        json_id: userFile.jsonId,
+        share_id: userFile.shareId || "",
+        created_at: userFile.createdAt,
+        updated_at: userFile.updatedAt,
+        is_expired: isExpired(userFile.expiredAt),
+        is_shared: userFile.isShared === 1,
       };
 
       return successResult(fileData, "Saved file retrieved successfully");

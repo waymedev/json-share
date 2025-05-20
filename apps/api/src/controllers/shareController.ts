@@ -55,9 +55,9 @@ router.post("/shares", upload.single("file"), async (ctx) => {
   // Create a shared file using the service
   const result = await ShareService.createSharedFile({
     filename,
-    jsonContent,
-    userId,
-    expirationDays,
+    json_content: jsonContent,
+    user_id: userId,
+    expiration_days: expirationDays,
   });
 
   if (result.success) {

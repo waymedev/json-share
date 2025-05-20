@@ -15,8 +15,8 @@ export interface PaginationData<T> {
   items: T[];
   total: number;
   page: number;
-  pageSize: number;
-  totalPages: number;
+  page_size: number;
+  total_pages: number;
 }
 
 /**
@@ -24,14 +24,14 @@ export interface PaginationData<T> {
  */
 export interface FileData {
   id: number;
-  fileName: string;
-  shareId: string;
-  jsonId: number;
-  jsonContent?: any;
-  createdAt: string;
-  updatedAt: string;
-  isExpired: boolean;
-  isShared: boolean;
+  file_name: string;
+  share_id: string;
+  json_id: number;
+  json_content?: any;
+  created_at: string;
+  updated_at: string;
+  is_expired: boolean;
+  is_shared: boolean;
 }
 
 /**
@@ -39,11 +39,11 @@ export interface FileData {
  */
 export interface UserFileInfo {
   id: number;
-  fileName: string;
-  shareId?: string;
-  isShared: boolean;
-  createdAt: number;
-  expiredAt: number | null;
+  file_name: string;
+  share_id?: string;
+  is_shared: boolean;
+  created_at: number;
+  expired_at: number | null;
 }
 
 /**
