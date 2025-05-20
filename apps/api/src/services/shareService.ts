@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { db } from "../db";
 import { RawJsonModel } from "../db/rawJsonModel";
 import { UserFileModel } from "../db/userFileModel";
-import { ShareFileData } from "../utils/Response";
+import { FileData } from "../utils/Response";
 import { isExpired } from "../utils/commonUtils";
 import { ErrorType } from "../utils/errorHandler";
 import {
@@ -89,7 +89,7 @@ export class ShareService {
    */
   static async getSharedFile(
     shareId: string
-  ): Promise<ServiceResult<ShareFileData>> {
+  ): Promise<ServiceResult<FileData>> {
     // Find the user file record by shareId
     const userFiles = await UserFileModel.getUserFileByShareId(shareId);
     const userFile = userFiles.length > 0 ? userFiles[0] : null;
@@ -118,9 +118,11 @@ export class ShareService {
       return errorResult(ErrorType.NOT_FOUND, "File content not found");
     }
 
-    const fileData: ShareFileData = {
+    const fileData: FileData = {
+      id: userFile.id,
       fileName: userFile.fileName,
       jsonContent: jsonContent.jsonContent,
+      jsonId: userFile.jsonId,
       shareId: userFile.shareId || "",
       createdAt: userFile.createdAt,
       updatedAt: userFile.updatedAt,
@@ -205,7 +207,7 @@ export class ShareService {
     size: number,
     expiredOnly: boolean,
     sharedOnly: boolean
-  ): Promise<ServiceResult<{ data: ShareFileData[]; totalRecords: number }>> {
+  ): Promise<ServiceResult<{ data: FileData[]; totalRecords: number }>> {
     try {
       const userFiles = await UserFileModel.getUserFileListByPage(
         userId,
@@ -222,11 +224,13 @@ export class ShareService {
         sharedOnly
       );
 
-      // userFiles convert to ShareFileData[]
-      const shareFileData: ShareFileData[] = userFiles.map((userFile) => {
+      // userFiles convert to FileData[]
+      const shareFileData: FileData[] = userFiles.map((userFile) => {
         return {
+          id: userFile.id,
           fileName: userFile.fileName,
           shareId: userFile.shareId || "",
+          jsonId: userFile.jsonId,
           createdAt: userFile.createdAt,
           updatedAt: userFile.updatedAt,
           isShared: userFile.isShared === 1,

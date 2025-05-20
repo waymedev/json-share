@@ -64,7 +64,7 @@ paths:
       tags:
         - Share
       summary: 获取分享列表
-      description: 分页查询当前用户的分享记录，可根据 expired 过滤是否已过期。
+      description: 分页查询当前用户的分享记录，可根据 expired 和 shared 过滤。
       parameters:
         - $ref: "#/components/parameters/XUserId"
         - in: query
@@ -84,6 +84,11 @@ paths:
           schema:
             type: boolean
           description: 是否只查询已过期的分享
+        - in: query
+          name: shared
+          schema:
+            type: boolean
+          description: 是否只查询已分享的文件
       responses:
         "200":
           description: 分享列表返回
@@ -104,19 +109,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServerErrorResponse"
 
-  /api/shares/{id}:
+  /api/shares/{shareId}:
     get:
       tags:
         - Share
       summary: 获取单个分享内容
       description: 根据分享记录 ID 获取对应的 JSON 内容。
       parameters:
-        - $ref: "#/components/parameters/XUserId"
         - in: path
-          name: id
+          name: shareId
           required: true
           schema:
-            type: integer
+            type: string
           description: 分享记录 ID
       responses:
         "200":
@@ -136,14 +140,14 @@ paths:
       tags:
         - Share
       summary: 删除分享记录
-      description: 删除指定的分享记录（软删或硬删由后端决定）
+      description: 删除指定的分享记录
       parameters:
         - $ref: "#/components/parameters/XUserId"
         - in: path
-          name: id
+          name: shareId
           required: true
           schema:
-            type: integer
+            type: string
           description: 分享记录 ID
       responses:
         "200":
@@ -176,8 +180,10 @@ paths:
               properties:
                 share_id:
                   type: string
-                  format: uuid
                   description: 要收藏的分享 ID
+                file_name:
+                  type: string
+                  description: 收藏时的文件名
               required:
                 - share_id
       responses:
@@ -219,6 +225,16 @@ paths:
             type: integer
             default: 20
           description: 每页条数
+        - in: query
+          name: expired_only
+          schema:
+            type: boolean
+          description: 是否只查询已过期的文件
+        - in: query
+          name: shared_only
+          schema:
+            type: boolean
+          description: 是否只查询已共享的文件
       responses:
         "200":
           description: 收藏列表返回
@@ -240,6 +256,88 @@ paths:
                 $ref: "#/components/schemas/ServerErrorResponse"
 
   /api/saved/{id}:
+    get:
+      tags:
+        - Saved
+      summary: 查看收藏文件
+      description: 获取收藏文件的详细信息和内容
+      parameters:
+        - $ref: "#/components/parameters/XUserId"
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 收藏记录 ID
+      responses:
+        "200":
+          description: 收藏文件详情返回
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedFileDetailResponse"
+        "400":
+          description: 参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 服务内部错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerErrorResponse"
+
+    put:
+      tags:
+        - Saved
+      summary: 更新收藏文件
+      description: 更新收藏文件的属性
+      parameters:
+        - $ref: "#/components/parameters/XUserId"
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 收藏记录 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                file_name:
+                  type: string
+                  description: 更新的文件名
+                is_shared:
+                  type: boolean
+                  description: 是否共享
+                expiration_days:
+                  type: integer
+                  description: 过期天数
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: 参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 服务内部错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerErrorResponse"
+
     delete:
       tags:
         - Saved
@@ -407,9 +505,18 @@ components:
     SaveFileResponse:
       type: object
       properties:
-        file_id:
+        code:
           type: integer
-          example: 1
+          example: 200
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+        message:
+          type: string
+          example: File saved successfully
 
     SavedListResponse:
       type: object
@@ -423,9 +530,65 @@ components:
             list:
               type: array
               items:
-                $ref: "#/components/schemas/ShareItem"
+                $ref: "#/components/schemas/SavedItem"
             pagination:
               $ref: "#/components/schemas/Pagination"
         message:
           type: string
           example: ok
+
+    SavedItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        file_name:
+          type: string
+          example: filename.txt
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-05-19T15:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-05-19T16:00:00Z"
+        share_id:
+          type: string
+          format: uuid
+          example: ec510aab-69a9-4beb-b7c7-d0f266dce36a
+        is_shared:
+          type: boolean
+          example: true
+        expiration_days:
+          type: integer
+          example: 30
+
+    SavedFileDetailResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            file_name:
+              type: string
+              example: "example.json"
+            json_content:
+              type: string
+              example: "{}"
+            is_shared:
+              type: boolean
+              example: true
+            expiration_days:
+              type: integer
+              example: 30
+        message:
+          type: string
+          example: File details retrieved successfully

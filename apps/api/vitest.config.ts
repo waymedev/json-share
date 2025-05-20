@@ -8,5 +8,8 @@ export default defineConfig({
       console.log(log);
       return true;
     }, // 直推 console.log
+    coverage: {
+      provider: "v8",
+    },
   },
 });

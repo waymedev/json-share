@@ -22,9 +22,11 @@ export interface PaginationData<T> {
 /**
  * 分享文件数据接口
  */
-export interface ShareFileData {
+export interface FileData {
+  id: number;
   fileName: string;
   shareId: string;
+  jsonId: number;
   jsonContent?: any;
   createdAt: string;
   updatedAt: string;
