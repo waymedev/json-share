@@ -127,6 +127,7 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFile = ref<FileInfo | null>(null);
 const expirationDays = ref("7");
 const rawFile = ref<File | null>(null);
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
 
 // Toast state
 const showToast = ref(false);
@@ -142,10 +143,21 @@ const triggerFileInput = () => {
   fileInput.value?.click();
 };
 
-const onFileSelected = (event: Event) => {
+const onFileSelected = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (input.files && input.files.length > 0) {
     const file = input.files[0];
+
+    // Validate if it's a valid JSON file
+    const isValidJson = await validateJsonFile(file);
+    if (!isValidJson) {
+      toastTitle.value = "无效的JSON文件";
+      toastMessage.value = "请确保上传的文件是有效的JSON格式";
+      toastType.value = "error";
+      showToast.value = true;
+      return;
+    }
+
     rawFile.value = file;
     selectedFile.value = {
       name: file.name,
@@ -155,16 +167,154 @@ const onFileSelected = (event: Event) => {
   }
 };
 
-const onFileDrop = (event: DragEvent) => {
+const onFileDrop = async (event: DragEvent) => {
   isDragging.value = false;
   if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
     const file = event.dataTransfer.files[0];
+
+    // Validate if it's a valid JSON file
+    const isValidJson = await validateJsonFile(file);
+    if (!isValidJson) {
+      toastTitle.value = "无效的JSON文件";
+      toastMessage.value = "请确保上传的文件是有效的JSON格式";
+      toastType.value = "error";
+      showToast.value = true;
+      return;
+    }
+
     rawFile.value = file;
     selectedFile.value = {
       name: file.name,
       size: file.size,
       type: file.type,
     };
+  }
+};
+
+const handleModalClose = () => {
+  showModal.value = false;
+  // Reset form
+  selectedFile.value = null;
+  rawFile.value = null;
+  if (fileInput.value) {
+    fileInput.value.value = "";
+  }
+};
+
+const validateJsonFile = (
+  file: File,
+  schema?: JsonSchema
+): Promise<boolean> => {
+  // Check file extension
+  if (!file.name.toLowerCase().endsWith(".json")) {
+    toastTitle.value = "文件类型错误";
+    toastMessage.value = "请上传.json格式的文件";
+    toastType.value = "error";
+    showToast.value = true;
+    return Promise.resolve(false);
+  }
+
+  // Check file size
+  if (file.size > MAX_FILE_SIZE) {
+    toastTitle.value = "文件过大";
+    toastMessage.value = `文件大小不能超过${MAX_FILE_SIZE / (1024 * 1024)}MB`;
+    toastType.value = "error";
+    showToast.value = true;
+    return Promise.resolve(false);
+  }
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      try {
+        const content = event.target?.result as string;
+        const jsonData = JSON.parse(content);
+
+        // If a schema is provided, validate against it
+        if (schema) {
+          const isValidStructure = validateJsonStructure(jsonData, schema);
+          if (!isValidStructure) {
+            toastTitle.value = "JSON结构错误";
+            toastMessage.value = "JSON文件结构不符合要求";
+            toastType.value = "error";
+            showToast.value = true;
+            resolve(false);
+            return;
+          }
+        }
+
+        resolve(true);
+      } catch (error) {
+        toastTitle.value = "无效的JSON文件";
+        toastMessage.value = "请确保上传的文件是有效的JSON格式";
+        toastType.value = "error";
+        showToast.value = true;
+        resolve(false);
+      }
+    };
+
+    reader.onerror = () => {
+      toastTitle.value = "文件读取错误";
+      toastMessage.value = "无法读取文件，请重试";
+      toastType.value = "error";
+      showToast.value = true;
+      resolve(false);
+    };
+    reader.readAsText(file);
+  });
+};
+
+// Helper function to validate JSON structure against a schema
+// This is a simple implementation - for production use consider using a library like ajv
+
+interface JsonSchemaProperty {
+  type: "string" | "number" | "boolean" | "object" | "array";
+}
+
+interface JsonSchema {
+  type: "object" | "array";
+  required?: string[];
+  properties?: Record<string, JsonSchemaProperty>;
+}
+
+const validateJsonStructure = (data: any, schema: JsonSchema): boolean => {
+  // Simple schema validation logic
+  // Example schema: { type: 'object', required: ['name', 'age'], properties: { name: { type: 'string' } } }
+
+  try {
+    // Check type
+    if (schema.type === "object" && typeof data !== "object") return false;
+    if (schema.type === "array" && !Array.isArray(data)) return false;
+
+    // Check required fields
+    if (schema.required && Array.isArray(schema.required)) {
+      for (const field of schema.required) {
+        if (!(field in data)) return false;
+      }
+    }
+
+    // Check properties
+    if (schema.properties && typeof schema.properties === "object") {
+      for (const [key, prop] of Object.entries(schema.properties)) {
+        if (key in data && prop.type) {
+          const value = data[key];
+
+          // Type validation
+          if (prop.type === "string" && typeof value !== "string") return false;
+          if (prop.type === "number" && typeof value !== "number") return false;
+          if (prop.type === "boolean" && typeof value !== "boolean")
+            return false;
+          if (prop.type === "object" && typeof value !== "object") return false;
+          if (prop.type === "array" && !Array.isArray(value)) return false;
+        }
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Schema validation error:", error);
+    return false;
   }
 };
 
@@ -174,6 +324,16 @@ const handleFileShare = async () => {
       selectedFile: selectedFile.value,
       rawFile: rawFile.value,
     });
+    return;
+  }
+
+  // Validate JSON file
+  const isValidJson = await validateJsonFile(rawFile.value);
+  if (!isValidJson) {
+    toastTitle.value = "无效的JSON文件";
+    toastMessage.value = "请确保上传的文件是有效的JSON格式";
+    toastType.value = "error";
+    showToast.value = true;
     return;
   }
 
@@ -214,16 +374,6 @@ const handleFileShare = async () => {
     toastMessage.value = error.value || "文件上传失败，请稍后重试";
     toastType.value = "error";
     showToast.value = true;
-  }
-};
-
-const handleModalClose = () => {
-  showModal.value = false;
-  // Reset form
-  selectedFile.value = null;
-  rawFile.value = null;
-  if (fileInput.value) {
-    fileInput.value.value = "";
   }
 };
 
