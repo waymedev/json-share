@@ -1,230 +1,130 @@
 <template>
-  <Transition
-    enter-active-class="ease-out duration-300"
-    enter-from-class="opacity-0"
-    enter-to-class="opacity-100"
-    leave-active-class="ease-in duration-200"
-    leave-from-class="opacity-100"
-    leave-to-class="opacity-0"
+  <div
+    v-if="show"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
   >
-    <div
-      v-if="show"
-      class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-40"
-    ></div>
-  </Transition>
+    <div class="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+      <h3 class="text-lg font-bold text-gray-900 mb-4">
+        Edit Sharing Settings
+      </h3>
 
-  <Transition
-    enter-active-class="ease-out duration-300"
-    enter-from-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-    enter-to-class="opacity-100 translate-y-0 sm:scale-100"
-    leave-active-class="ease-in duration-200"
-    leave-from-class="opacity-100 translate-y-0 sm:scale-100"
-    leave-to-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-  >
-    <div
-      v-if="show"
-      class="fixed inset-0 z-50 overflow-y-auto"
-      aria-labelledby="modal-title"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div
-        class="flex min-h-screen items-end justify-center p-4 text-center sm:items-center sm:p-0"
-      >
-        <div
-          class="relative w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:max-w-lg sm:p-6"
-        >
-          <div class="mb-5">
-            <h3
-              class="text-lg font-semibold leading-6 text-gray-900"
-              id="modal-title"
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <label class="font-medium text-gray-700">File Sharing</label>
+          <div
+            class="relative inline-block w-12 h-6 transition duration-200 ease-in-out rounded-full cursor-pointer"
+          >
+            <input
+              id="sharing-toggle"
+              v-model="isShared"
+              type="checkbox"
+              class="absolute w-0 h-0 opacity-0"
+            />
+            <label
+              for="sharing-toggle"
+              class="flex items-center w-full h-full bg-gray-300 rounded-full cursor-pointer"
+              :class="{ 'bg-emerald-500': isShared }"
             >
-              Edit Share Settings
-            </h3>
-            <p class="text-sm text-gray-500 mt-1" v-if="props.file">
-              {{ props.file.file_name }}
-            </p>
+              <span
+                class="h-5 w-5 ml-0.5 bg-white rounded-full transform transition-transform duration-200 ease-in-out"
+                :class="{ 'translate-x-6': isShared }"
+              ></span>
+            </label>
           </div>
+        </div>
 
-          <form @submit.prevent="handleSave">
-            <!-- Sharing Status - Capsule Toggle -->
-            <div class="mb-6">
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Sharing Status
-              </label>
-              <div class="inline-flex rounded-full p-1 bg-gray-100">
-                <button
-                  type="button"
-                  class="px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 focus:outline-none"
-                  :class="
-                    isShared
-                      ? 'bg-white text-gray-800 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  "
-                  @click="isShared = true"
-                >
-                  Shared
-                </button>
-                <button
-                  type="button"
-                  class="px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 focus:outline-none"
-                  :class="
-                    !isShared
-                      ? 'bg-white text-gray-800 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  "
-                  @click="isShared = false"
-                >
-                  Not Shared
-                </button>
-              </div>
-            </div>
+        <div
+          v-if="isShared"
+          class="mb-4 transition-opacity duration-200 ease-in-out"
+          :class="{ 'opacity-100': isShared, 'opacity-0': !isShared }"
+        >
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Expiration
+          </label>
+          <select
+            v-model="expirationDays"
+            class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+          >
+            <option :value="1">1 day</option>
+            <option :value="7">7 days</option>
+            <option :value="undefined">No expiration</option>
+          </select>
+        </div>
 
-            <!-- Expiration Days - Simplified Options -->
-            <div class="mb-6" v-if="isShared">
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Expiration Time
-              </label>
-              <div class="grid grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  @click="expirationDays = '1'"
-                  class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 focus:outline-none"
-                  :class="
-                    expirationDays === '1'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'
-                  "
-                >
-                  1 Day
-                </button>
-                <button
-                  type="button"
-                  @click="expirationDays = '7'"
-                  class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 focus:outline-none"
-                  :class="
-                    expirationDays === '7'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'
-                  "
-                >
-                  7 Days
-                </button>
-                <button
-                  type="button"
-                  @click="expirationDays = 'unlimited'"
-                  class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 focus:outline-none"
-                  :class="
-                    expirationDays === 'unlimited'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'
-                  "
-                >
-                  Forever
-                </button>
-              </div>
-            </div>
-
-            <div
-              class="mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3"
+        <div class="mt-6 text-sm text-gray-600" v-if="isShared">
+          <p>
+            People with the link will be able to view this file.
+            <span v-if="expirationDays"
+              >The link will expire after {{ expirationDays }} day(s).</span
             >
-              <button
-                type="button"
-                class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1"
-                @click="handleCancel"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                class="inline-flex w-full justify-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 sm:col-start-2"
-                :disabled="isLoading"
-              >
-                <Loader2 v-if="isLoading" class="animate-spin h-4 w-4 mr-2" />
-                {{ isLoading ? "Saving..." : "Save Changes" }}
-              </button>
-            </div>
-          </form>
+            <span v-else>The link will never expire.</span>
+          </p>
         </div>
       </div>
+
+      <div class="flex justify-end space-x-3">
+        <button
+          @click="handleClose"
+          class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100"
+        >
+          Cancel
+        </button>
+        <button
+          @click="handleSave"
+          class="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 flex items-center"
+          :disabled="isLoading"
+        >
+          <Loader v-if="isLoading" class="animate-spin h-4 w-4 mr-2" />
+          Save
+        </button>
+      </div>
     </div>
-  </Transition>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { Loader2 } from "lucide-vue-next";
+import { Loader } from "lucide-vue-next";
 import { ref, watch } from "vue";
 import type { SavedItem } from "../services/saved";
 
-// Props
-const props = defineProps({
-  show: {
-    type: Boolean,
-    default: false,
-  },
-  file: {
-    type: Object as () => SavedItem | null,
-    default: null,
-  },
-  isLoading: {
-    type: Boolean,
-    default: false,
-  },
-  currentExpirationDays: {
-    type: Number,
-    default: undefined,
-  },
-});
+const props = defineProps<{
+  show: boolean;
+  file: SavedItem | null;
+  isLoading: boolean;
+  currentExpirationDays: number | undefined;
+}>();
 
-// Emits
-const emit = defineEmits(["save", "close"]);
+const emit = defineEmits<{
+  (e: "close"): void;
+  (
+    e: "save",
+    data: { isShared: boolean; expirationDays: number | undefined }
+  ): void;
+}>();
 
-// Reactive state
-const isShared = ref(props.file?.is_shared ?? false);
-const expirationDays = ref(
-  props.currentExpirationDays ? String(props.currentExpirationDays) : "7"
-);
+const isShared = ref(false);
+const expirationDays = ref<number | undefined>(7);
 
-// Watch for changes in props
+// Watch for changes in the file and update form state
 watch(
   () => props.file,
   (newFile) => {
     if (newFile) {
-      isShared.value = newFile.is_shared ?? false;
+      isShared.value = newFile.is_shared || false;
+      expirationDays.value = props.currentExpirationDays;
     }
   },
   { immediate: true }
 );
 
-watch(
-  () => props.currentExpirationDays,
-  (days) => {
-    if (days) {
-      expirationDays.value = String(days);
-    } else if (days === 0) {
-      expirationDays.value = "unlimited";
-    }
-  },
-  { immediate: true }
-);
-
-// Methods
-const handleSave = () => {
+const handleSave = (): void => {
   emit("save", {
     isShared: isShared.value,
-    expirationDays:
-      expirationDays.value === "unlimited" ? 0 : Number(expirationDays.value),
+    expirationDays: isShared.value ? expirationDays.value : undefined,
   });
 };
 
-const handleCancel = () => {
+const handleClose = (): void => {
   emit("close");
 };
 </script>
-
-<style scoped>
-/* Optional: Add transition for smoother button state changes */
-button {
-  transition: all 0.2s ease;
-}
-</style>

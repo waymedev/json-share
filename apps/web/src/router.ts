@@ -1,15 +1,13 @@
 import { createRouter, createWebHistory } from "vue-router";
-import HomePage from "./components/HomePage.vue";
-import InvalidPage from "./components/InvalidPage.vue";
-import PreviewPage from "./components/PreviewPage.vue";
-import UserLibrary from "./components/UserLibrary.vue";
+import HomePage from "./layout/HomePage.vue";
+import LibraryPage from "./layout/LibraryPage.vue";
+import PreviewPage from "./layout/PreviewPage.vue";
 
 const routes = [
   { path: "/", component: HomePage },
   { path: "/preview/:fileId", component: PreviewPage },
   { path: "/share/:shareId", component: PreviewPage },
-  { path: "/library", component: UserLibrary },
-  { path: "/invalid", component: InvalidPage },
+  { path: "/library", component: LibraryPage },
 ];
 
 export default createRouter({

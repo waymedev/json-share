@@ -1,7 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
-import { defineConfig } from "vite";
 import { viteEnvs } from "vite-envs";
+import { defineConfig } from "vitest/config";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -42,4 +42,14 @@ export default defineConfig({
       },
     }),
   ],
+  test: {
+    globals: true,
+    environment: "happy-dom",
+    include: ["**/*.{test,spec}.{js,ts,jsx,tsx,vue}"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+      exclude: ["node_modules/", "tests/setup.ts"],
+    },
+  },
 });

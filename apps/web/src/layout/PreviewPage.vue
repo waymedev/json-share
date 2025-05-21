@@ -138,9 +138,9 @@ import { computed, onMounted, ref } from "vue";
 import JsonViewer from "vue-json-viewer";
 import { useRoute, useRouter } from "vue-router";
 import { savedService, sharesService } from "../services";
-import ErrorDisplay from "./ErrorDisplay.vue";
-import Footer from "./Footer.vue";
-import Header from "./Header.vue";
+import ErrorDisplay from "../components/ErrorDisplay.vue";
+import Footer from "../components/Footer.vue";
+import Header from "../components/Header.vue";
 
 const router = useRouter();
 const route = useRoute();
