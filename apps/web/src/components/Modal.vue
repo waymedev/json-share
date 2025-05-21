@@ -114,12 +114,40 @@ const handleClose = () => {
   emit("close");
 };
 
-const handleCopy = async () => {
+const handleCopy = () => {
   if (props.shareLink) {
-    try {
-      await navigator.clipboard.writeText(props.shareLink);
-    } catch (err) {
-      console.error("Failed to copy link:", err);
+    // Check if clipboard API is available
+    if (
+      navigator.clipboard &&
+      typeof navigator.clipboard.writeText === "function"
+    ) {
+      navigator.clipboard.writeText(props.shareLink).catch((err) => {
+        console.error("Failed to copy link:", err);
+      });
+    } else {
+      // Fallback method using a temporary textarea element
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = props.shareLink;
+
+        // Make the textarea out of viewport
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        const successful = document.execCommand("copy");
+        document.body.removeChild(textArea);
+
+        if (!successful) {
+          throw new Error("Copy command failed");
+        }
+      } catch (err) {
+        console.error("Fallback: Failed to copy link:", err);
+      }
     }
   }
 };

@@ -164,17 +164,53 @@ const handleCopyShareLink = (file: SavedItem): void => {
 
   const shareUrl = `${window.location.origin}/share/${file.share_id}`;
 
-  navigator.clipboard
-    .writeText(shareUrl)
-    .then(() => {
-      showToastNotification(
-        `Share link for "${file.file_name}" copied to clipboard!`
-      );
-    })
-    .catch((err) => {
-      console.error("Failed to copy link: ", err);
-      showToastNotification("Failed to copy link to clipboard");
-    });
+  // Check if clipboard API is available
+  if (
+    navigator.clipboard &&
+    typeof navigator.clipboard.writeText === "function"
+  ) {
+    navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => {
+        showToastNotification(
+          `Share link for "${file.file_name}" copied to clipboard!`
+        );
+      })
+      .catch((err) => {
+        console.error("Failed to copy link: ", err);
+        showToastNotification("Failed to copy link to clipboard");
+      });
+  } else {
+    // Fallback method using a temporary textarea element
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = shareUrl;
+
+      // Make the textarea out of viewport
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+
+      if (successful) {
+        showToastNotification(
+          `Share link for "${file.file_name}" copied to clipboard!`
+        );
+      } else {
+        throw new Error("Copy command failed");
+      }
+    } catch (err) {
+      console.error("Fallback: Failed to copy link: ", err);
+      // Show the share URL in a toast so users can manually copy it
+      showToastNotification(`Share link: ${shareUrl} (manual copy required)`);
+    }
+  }
 };
 
 const handleEditSettings = (file: SavedItem): void => {
