@@ -53,6 +53,10 @@ jobs:
           push: true
           tags: ${{ steps.meta-api.outputs.tags }}
           labels: ${{ steps.meta-api.outputs.labels }}
+          build-args: |
+            NODE_ENV=${{ secrets.NODE_ENV || 'production' }}
+            PORT=${{ secrets.PORT || '3000' }}
+            DATABASE_URL=${{ secrets.DATABASE_URL || 'mysql://user:password@localhost:3306/json_share' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -100,5 +104,7 @@ jobs:
           push: true
           tags: ${{ steps.meta-web.outputs.tags }}
           labels: ${{ steps.meta-web.outputs.labels }}
+          build-args: |
+            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL || 'http://localhost:3000/api' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
