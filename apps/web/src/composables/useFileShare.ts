@@ -14,7 +14,8 @@ export const useFileShare = () => {
     try {
       isLoading.value = true;
       error.value = null;
-      shareResult.value = await sharesService.shareFile(data);
+      const response = await sharesService.shareFile(data);
+      shareResult.value = response.data;
       return shareResult.value;
     } catch (e) {
       error.value = e instanceof Error ? e.message : "Failed to share file";

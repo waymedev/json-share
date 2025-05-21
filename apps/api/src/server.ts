@@ -55,13 +55,13 @@ app.use(
 // Error Handler
 app.use(errorHandler(env));
 
+// Middleware
+app.use(bodyParser());
+
 // Routes
 router.use(shareRouter.routes(), shareRouter.allowedMethods());
 router.use(savedRouter.routes(), savedRouter.allowedMethods());
 app.use(router.routes());
-
-// Middleware
-app.use(bodyParser());
 
 app.on("error", (err, ctx) => {
   // 区分开发/生产

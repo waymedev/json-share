@@ -5,6 +5,7 @@
       <template #right>
         <div class="flex space-x-3">
           <button
+            v-if="isSharePage"
             @click="handleSave"
             class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded flex items-center"
           >
@@ -54,12 +55,11 @@
           Loading JSON data...
         </div>
 
-        <div
+        <ErrorDisplay
           v-else-if="error"
-          class="p-8 text-center text-red-600 flex-1 flex items-center justify-center"
-        >
-          {{ error }}
-        </div>
+          :error-message="error"
+          @go-home="goToHomePage"
+        />
 
         <div
           v-else
@@ -76,23 +76,90 @@
     </main>
 
     <Footer v-if="!isFullscreen" />
+
+    <!-- Save File Modal -->
+    <div
+      v-if="showSaveModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      @click.self="closeSaveModal"
+    >
+      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Save JSON File</h3>
+        <div
+          v-if="saveError"
+          class="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm"
+        >
+          {{ saveError }}
+        </div>
+        <div class="mb-4">
+          <label
+            for="filename"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >File name</label
+          >
+          <input
+            type="text"
+            id="filename"
+            v-model="fileName"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            placeholder="Enter file name"
+            @keydown.enter="saveFile"
+            :disabled="isSaving"
+          />
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button
+            @click="closeSaveModal"
+            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            :disabled="isSaving"
+          >
+            Cancel
+          </button>
+          <button
+            @click="saveFile"
+            class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 flex items-center"
+            :disabled="isSaving"
+          >
+            <span
+              v-if="isSaving"
+              class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"
+            ></span>
+            {{ isSaving ? "Saving..." : "Save" }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Download, Maximize2, Minimize2, Save } from "lucide-vue-next";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import JsonViewer from "vue-json-viewer";
-import { useRouter } from "vue-router";
-import { sharesService } from "../services";
+import { useRoute, useRouter } from "vue-router";
+import { savedService, sharesService } from "../services";
+import ErrorDisplay from "./ErrorDisplay.vue";
 import Footer from "./Footer.vue";
 import Header from "./Header.vue";
 
 const router = useRouter();
+const route = useRoute();
 const jsonData = ref<any>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const isFullscreen = ref(false);
+const showSaveModal = ref(false);
+const fileName = ref("json-preview.json");
+const isSaving = ref(false);
+const saveError = ref<string | null>(null);
+
+// Keep track of the current share_id
+const currentShareId = ref<string | null>(null);
+
+// Determine if we're on a share page (to show/hide the save button)
+const isSharePage = computed(() => {
+  return route.path.startsWith("/share/");
+});
 
 const toggleFullscreen = (): void => {
   isFullscreen.value = !isFullscreen.value;
@@ -100,29 +167,67 @@ const toggleFullscreen = (): void => {
 
 const loadJsonFile = async () => {
   try {
-    // Extract share ID from URL
-    const pathParts = window.location.pathname.split("/");
-    const shareId = pathParts[pathParts.length - 1];
+    isLoading.value = true;
+    error.value = null;
 
-    try {
-      const response = await sharesService.getShareDetail(shareId);
-      // Parse JSON content from the response
-      jsonData.value = response.json_content
-        ? JSON.parse(response.json_content)
-        : null;
-    } catch (apiError: any) {
-      // Check for error code in the API response
-      if (apiError.code) {
-        router.push("/invalid");
+    const routePath = route.path;
+    const routeParams = route.params;
+
+    // Check if we're on the preview route or share route
+    if (routePath.startsWith("/preview") && routeParams.fileId) {
+      // This is a saved file preview, use savedService
+      const fileId = Number(routeParams.fileId);
+
+      if (isNaN(fileId)) {
+        throw new Error("Invalid file ID");
+      }
+
+      try {
+        const response = await savedService.getSavedFileDetail(fileId);
+        if (response && response.data) {
+          jsonData.value = response.data.json_content;
+        } else {
+          throw new Error("Failed to load JSON data");
+        }
+      } catch (apiError: any) {
+        // Show error in the current page instead of redirecting
+        if (apiError.message) {
+          error.value = apiError.message;
+        } else {
+          error.value =
+            "This file is no longer available or may have been removed";
+        }
         return;
       }
-      throw apiError; // Rethrow to be caught by the outer catch
+    } else if (routePath.startsWith("/share") && routeParams.shareId) {
+      // This is a shared link preview, use sharesService
+      const shareId = routeParams.shareId as string;
+      currentShareId.value = shareId;
+
+      try {
+        const response = await sharesService.getShareDetail(shareId);
+        if (response && response.data && response.data.json_content) {
+          jsonData.value = response.data.json_content;
+        } else {
+          throw new Error("Failed to load JSON data");
+        }
+      } catch (apiError: any) {
+        // Show error in the current page instead of redirecting
+        if (apiError.message) {
+          error.value = apiError.message;
+        } else {
+          error.value =
+            "This shared link is no longer available or may have been removed";
+        }
+        return;
+      }
+    } else {
+      throw new Error("Invalid route");
     }
   } catch (e) {
+    // Set the error to display in the current page
     error.value = e instanceof Error ? e.message : "Failed to load JSON data";
     console.error("Error loading JSON data:", e);
-    // Redirect to InvalidPage on error
-    router.push("/invalid");
   } finally {
     isLoading.value = false;
   }
@@ -132,27 +237,60 @@ onMounted(() => {
   loadJsonFile();
 });
 
+const goToHomePage = (): void => {
+  router.push("/");
+};
+
 const handleSave = (): void => {
+  // Open the modal to set the filename
+  showSaveModal.value = true;
+  // Reset error message when opening modal
+  saveError.value = null;
+};
+
+const closeSaveModal = (): void => {
+  showSaveModal.value = false;
+  saveError.value = null;
+};
+
+const saveFile = async (): Promise<void> => {
   try {
-    // Create a JSON string with proper formatting
-    const jsonString = JSON.stringify(jsonData.value, null, 2);
+    // Validate file name
+    if (!fileName.value.trim()) {
+      fileName.value = "json-preview.json";
+    }
 
-    // Create a Blob containing the JSON data
-    const blob = new Blob([jsonString], { type: "application/json" });
+    // Add .json extension if not present
+    if (!fileName.value.toLowerCase().endsWith(".json")) {
+      fileName.value += ".json";
+    }
 
-    // Create a URL for the Blob
-    const url = URL.createObjectURL(blob);
+    // Ensure we have a share_id
+    if (!currentShareId.value) {
+      throw new Error("No share ID available for saving");
+    }
 
-    // Open the JSON in a new tab
-    window.open(url, "_blank");
+    isSaving.value = true;
+    saveError.value = null;
 
-    // Clean up the URL object
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 100);
+    // Call savedService.saveFile to save the file on the server
+    const response = await savedService.saveFile({
+      share_id: currentShareId.value,
+      file_name: fileName.value,
+    });
+
+    if (response && response.data && response.data.id) {
+      // Success - redirect to the saved file preview
+      router.push("/library");
+      closeSaveModal();
+    } else {
+      throw new Error("Failed to save file");
+    }
   } catch (e) {
     console.error("Error saving JSON:", e);
-    alert("Failed to save JSON data");
+    saveError.value = e instanceof Error ? e.message : "Failed to save file";
+  } finally {
+    isSaving.value = false;
   }
 };
 

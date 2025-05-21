@@ -5,7 +5,6 @@ export * from "./api";
 export { sharesService } from "./shares";
 export type {
   FormattedShareResponse,
-  ShareDetailResponse,
   ShareItem,
   ShareRequest,
   SharesListResponse,

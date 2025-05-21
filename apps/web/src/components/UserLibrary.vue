@@ -116,62 +116,33 @@
                   <td class="px-6 py-4 whitespace-nowrap text-sm">
                     <span
                       :class="
-                        file.is_shared
+                        file.is_expired
+                          ? 'bg-red-100 text-red-800'
+                          : file.is_shared
                           ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
+                          : 'bg-gray-100 text-gray-800'
                       "
                       class="px-2 py-1 rounded-full text-xs"
                     >
-                      {{ file.is_shared ? "Shared" : "Not Shared" }}
+                      {{
+                        file.is_expired
+                          ? "Expired"
+                          : file.is_shared
+                          ? "Shared"
+                          : "Unshared"
+                      }}
                     </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div class="flex space-x-2">
-                      <!-- For shared files -->
-                      <template v-if="file.is_shared">
-                        <button
-                          @click="copyShareLink(file)"
-                          class="text-emerald-600 hover:text-emerald-900"
-                          title="Copy Share Link"
-                        >
-                          <Link class="h-5 w-5" />
-                        </button>
-                        <button
-                          @click="extendExpiration(file)"
-                          class="text-blue-600 hover:text-blue-900"
-                          title="Extend Expiration"
-                        >
-                          <Clock class="h-5 w-5" />
-                        </button>
-                        <button
-                          @click="confirmUnshare(file)"
-                          class="text-orange-600 hover:text-orange-900"
-                          title="Unshare"
-                        >
-                          <Share class="h-5 w-5" />
-                        </button>
-                      </template>
-
-                      <!-- For unshared files -->
-                      <template v-else>
-                        <button
-                          @click="shareFile(file)"
-                          class="text-emerald-600 hover:text-emerald-900"
-                          title="Share"
-                        >
-                          <Share class="h-5 w-5" />
-                        </button>
-                      </template>
-
-                      <!-- Delete button for all files -->
-                      <button
-                        @click="confirmDelete(file)"
-                        class="text-red-600 hover:text-red-900"
-                        title="Delete"
-                      >
-                        <Trash2 class="h-5 w-5" />
-                      </button>
-                    </div>
+                    <FileActions
+                      :file="file"
+                      :active-filter="activeFilter"
+                      @copy-share-link="copyShareLink"
+                      @edit-settings="showEditSettings"
+                      @confirm-unshare="confirmUnshare"
+                      @share-file="shareFile"
+                      @confirm-delete="confirmDelete"
+                    />
                   </td>
                 </tr>
 
@@ -280,25 +251,49 @@
         </div>
       </div>
     </div>
+
+    <!-- Edit Settings Modal -->
+    <EditShareModal
+      :show="showEditModal"
+      :file="selectedFile"
+      :is-loading="isUpdating"
+      :current-expiration-days="currentExpirationDays"
+      @close="showEditModal = false"
+      @save="handleSaveSettings"
+    />
+
+    <!-- Success Modal -->
+    <Modal
+      :show="showSuccessModal"
+      title="Settings Updated"
+      message="File sharing settings have been updated successfully. You can share this file using the link below:"
+      :share-link="shareLink"
+      @close="showSuccessModal = false"
+    />
+
+    <!-- Toast Notification -->
+    <div
+      v-if="showToast"
+      class="fixed bottom-4 right-4 bg-emerald-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center z-50 transition-opacity duration-300"
+      :class="{ 'opacity-100': showToast, 'opacity-0': !showToast }"
+    >
+      <CheckCircle class="h-5 w-5 mr-2" />
+      <span>{{ toastMessage }}</span>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {
-  Clock,
-  FileQuestion,
-  FileText,
-  Link,
-  Plus,
-  Share,
-  Trash2,
-} from "lucide-vue-next";
+import { CheckCircle, FileQuestion, FileText, Plus } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { savedService, type SavedItem } from "../services/saved";
 import type { Pagination } from "../services/types";
+import EditShareModal from "./EditShareModal.vue";
+import FileActions from "./FileActions.vue";
 import Footer from "./Footer.vue";
 import Header from "./Header.vue";
+import Modal from "./Modal.vue";
 // Router
 const router = useRouter();
 
@@ -313,16 +308,49 @@ const pagination = ref<Pagination>({
   total_pages: 0,
 });
 
+// Toast notification state
+const showToast = ref(false);
+const toastMessage = ref("");
+let toastTimeout: number | null = null;
+
 // Confirmation modal state
 const showConfirmModal = ref(false);
 const confirmModalTitle = ref("");
 const confirmModalMessage = ref("");
 const confirmCallback = ref(() => {});
 
+// Edit modal state
+const showEditModal = ref(false);
+const selectedFile = ref<SavedItem | null>(null);
+const isUpdating = ref(false);
+const currentExpirationDays = ref<number | undefined>(undefined);
+
+// Success modal state
+const showSuccessModal = ref(false);
+const shareLink = ref("");
+
 // Fetch files on component mount
 onMounted(() => {
   fetchFiles(1);
 });
+
+// Toast methods
+const showToastNotification = (message: string) => {
+  // Clear existing timeout if there is one
+  if (toastTimeout !== null) {
+    window.clearTimeout(toastTimeout);
+  }
+
+  // Set toast message and show it
+  toastMessage.value = message;
+  showToast.value = true;
+
+  // Set timeout to hide toast after 3 seconds
+  toastTimeout = window.setTimeout(() => {
+    showToast.value = false;
+    toastTimeout = null;
+  }, 3000);
+};
 
 // Methods
 const fetchFiles = async (page: number) => {
@@ -373,56 +401,95 @@ const goToPreview = (id: number) => {
   router.push(`/preview/${id}`);
 };
 
-const formatDate = (dateString: string): string => {
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(dateString));
-};
-
 const createNewShare = (): void => {
-  router.push("/create");
+  router.push("/");
 };
 
 const copyShareLink = (file: SavedItem): void => {
-  const shareUrl = `${window.location.origin}/s/${file.share_id}`;
+  // Skip if file is not shared or is expired
+  if (!file.is_shared || file.is_expired) return;
+
+  const shareUrl = `${window.location.origin}/share/${file.share_id}`;
   navigator.clipboard
     .writeText(shareUrl)
     .then(() => {
-      alert(`Share link for "${file.file_name}" copied to clipboard!`);
+      showToastNotification(
+        `Share link for "${file.file_name}" copied to clipboard!`
+      );
     })
     .catch((err) => {
       console.error("Failed to copy link: ", err);
-      alert("Failed to copy link to clipboard");
+      showToastNotification("Failed to copy link to clipboard");
     });
 };
 
-const extendExpiration = async (file: SavedItem): Promise<void> => {
+const showEditSettings = async (file: SavedItem) => {
+  selectedFile.value = file;
+  isUpdating.value = true;
+
   try {
-    // Default to extending by 30 days
-    await savedService.updateSavedFile(file.id, {
-      expiration_days: 30,
+    // Get current file details including expiration_days
+    const response = await savedService.getSavedFileDetail(file.id);
+    if (response && response.data) {
+      currentExpirationDays.value = response.data.expiration_days;
+    }
+
+    showEditModal.value = true;
+    isUpdating.value = false;
+  } catch (error) {
+    console.error("Failed to get file details:", error);
+    isUpdating.value = false;
+    showToastNotification("Failed to load file details");
+  }
+};
+
+const handleSaveSettings = async (data: {
+  isShared: boolean;
+  expirationDays: number | undefined;
+}) => {
+  if (!selectedFile.value) return;
+
+  isUpdating.value = true;
+
+  console.log("selectedFile", selectedFile.value);
+
+  try {
+    await savedService.updateSavedFile(selectedFile.value.id, {
+      file_name: selectedFile.value.file_name,
+      is_shared: data.isShared,
+      expiration_days: data.expirationDays,
     });
-    alert(`Expiration for "${file.file_name}" has been extended by 30 days.`);
+
+    // If file is shared, show success modal with share link
+    if (data.isShared) {
+      shareLink.value = `${window.location.origin}/share/${selectedFile.value.share_id}`;
+      showSuccessModal.value = true;
+    } else {
+      showToastNotification("File settings updated successfully");
+    }
+
+    showEditModal.value = false;
     fetchFiles(pagination.value.page);
   } catch (error) {
-    console.error("Failed to extend expiration:", error);
-    alert("Failed to extend file expiration");
+    console.error("Failed to update file settings:", error);
+    showToastNotification("Failed to update file settings");
+  } finally {
+    isUpdating.value = false;
   }
 };
 
 const shareFile = async (file: SavedItem): Promise<void> => {
   try {
     await savedService.updateSavedFile(file.id, {
+      file_name: file.file_name,
       is_shared: true,
       expiration_days: 30, // Default 30 days
     });
-    alert(`File "${file.file_name}" is now shared.`);
+    showToastNotification(`File "${file.file_name}" is now shared.`);
     fetchFiles(pagination.value.page);
   } catch (error) {
     console.error("Failed to share file:", error);
-    alert("Failed to share file");
+    showToastNotification("Failed to share file");
   }
 };
 
@@ -436,13 +503,15 @@ const confirmUnshare = (file: SavedItem): void => {
 const unshareFile = async (file: SavedItem): Promise<void> => {
   try {
     await savedService.updateSavedFile(file.id, {
+      file_name: file.file_name,
       is_shared: false,
     });
     showConfirmModal.value = false;
+    showToastNotification(`File "${file.file_name}" is no longer shared.`);
     fetchFiles(pagination.value.page);
   } catch (error) {
     console.error("Failed to unshare file:", error);
-    alert("Failed to unshare file");
+    showToastNotification("Failed to unshare file");
     showConfirmModal.value = false;
   }
 };
@@ -458,10 +527,11 @@ const deleteFile = async (file: SavedItem): Promise<void> => {
   try {
     await savedService.deleteSavedFile(file.id);
     showConfirmModal.value = false;
+    showToastNotification(`File "${file.file_name}" has been deleted.`);
     fetchFiles(pagination.value.page);
   } catch (error) {
     console.error("Failed to delete file:", error);
-    alert("Failed to delete file");
+    showToastNotification("Failed to delete file");
     showConfirmModal.value = false;
   }
 };

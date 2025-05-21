@@ -1,5 +1,6 @@
 import { apiClient } from "./api";
 import type {
+  BaseResponseWithData,
   MessageResponse,
   PaginatedListResponse,
   Pagination,
@@ -45,8 +46,13 @@ export interface UpdateSavedFileRequest {
 }
 
 export const savedService = {
-  async saveFile(data: SaveFileRequest): Promise<SaveFileResponseData> {
-    return apiClient.post<SaveFileResponseData>("/saved", data);
+  async saveFile(
+    data: SaveFileRequest
+  ): Promise<BaseResponseWithData<SaveFileResponseData>> {
+    return apiClient.post<BaseResponseWithData<SaveFileResponseData>>(
+      "/saved",
+      data
+    );
   },
 
   async getSavedFiles(
@@ -72,15 +78,22 @@ export const savedService = {
     );
   },
 
-  async getSavedFileDetail(id: number): Promise<SavedFileDetailData> {
-    return apiClient.get<SavedFileDetailData>(`/saved/${id}`);
+  async getSavedFileDetail(
+    id: number
+  ): Promise<BaseResponseWithData<SavedFileDetailData>> {
+    return apiClient.get<BaseResponseWithData<SavedFileDetailData>>(
+      `/saved/${id}`
+    );
   },
 
   async updateSavedFile(
     id: number,
     data: UpdateSavedFileRequest
-  ): Promise<MessageResponse> {
-    return apiClient.put<MessageResponse>(`/saved/${id}`, data);
+  ): Promise<BaseResponseWithData<MessageResponse>> {
+    return apiClient.put<BaseResponseWithData<MessageResponse>>(
+      `/saved/${id}`,
+      data
+    );
   },
 
   async deleteSavedFile(id: number): Promise<MessageResponse> {

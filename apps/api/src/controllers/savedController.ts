@@ -160,15 +160,40 @@ router.put("/saved/:id", async (ctx) => {
     return;
   }
 
-  const { file_name, is_shared, expiration_days } = ctx.request
-    .body as UpdateFileBody;
+  // Debug the request body
+  console.log("Request body:", ctx.request.body);
+  console.log("Content type:", ctx.request.headers["content-type"]);
+
+  // More robust body handling
+  let updateData: UpdateFileBody = {};
+
+  if (ctx.request.body) {
+    if (typeof ctx.request.body.file_name === "string") {
+      updateData.file_name = ctx.request.body.file_name;
+    }
+
+    if (typeof ctx.request.body.is_shared === "boolean") {
+      updateData.is_shared = ctx.request.body.is_shared;
+    }
+
+    if (typeof ctx.request.body.expiration_days === "number") {
+      updateData.expiration_days = ctx.request.body.expiration_days;
+    }
+  }
 
   // Update the saved file using the service
-  const result = await SavedService.updateSavedFile(id, userId, {
-    file_name,
-    is_shared,
-    expiration_days,
-  });
+  const result = await SavedService.updateSavedFile(id, userId, updateData);
+
+  // Handle the response
+  if (result.success) {
+    ctx.body = successResponse(result.data, result.message);
+  } else {
+    handleApiError(
+      ctx,
+      result.errorType || ErrorType.INTERNAL_ERROR,
+      result.message
+    );
+  }
 });
 
 export default router;

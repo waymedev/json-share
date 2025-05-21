@@ -184,7 +184,7 @@ export class SavedService {
       const updatedFile = {
         ...userFile, // Include all existing properties
         fileName: updateData.file_name || userFile.fileName,
-        isShared: updateData.is_shared ? 1 : userFile.isShared,
+        isShared: updateData.is_shared ? 1 : 0,
         expiredAt: updateData.expiration_days
           ? Date.now() + updateData.expiration_days * 24 * 60 * 60 * 1000
           : userFile.expiredAt,

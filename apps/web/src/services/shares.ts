@@ -1,5 +1,9 @@
 import { apiClient } from "./api";
-import type { MessageResponse, Pagination } from "./types";
+import type {
+  BaseResponseWithData,
+  MessageResponse,
+  Pagination,
+} from "./types";
 
 export interface ShareRequest {
   file: File;
@@ -32,8 +36,6 @@ export interface ShareDetailData {
   json_content: string;
 }
 
-export type ShareDetailResponse = ShareDetailData;
-
 export interface FormattedShareResponse {
   share_id: string;
   share_url: string;
@@ -52,24 +54,23 @@ const formatShareResponse = (
 };
 
 export const sharesService = {
-  async shareFile(data: ShareRequest): Promise<FormattedShareResponse> {
+  async shareFile(
+    data: ShareRequest
+  ): Promise<BaseResponseWithData<ShareResponseData>> {
     const formData = new FormData();
     formData.append("file", data.file);
     formData.append("filename", data.filename);
     formData.append("expiration_days", data.expirationDays?.toString() || "0");
 
-    const response = await apiClient.post<ShareResponseData>(
-      "/shares",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
+    const response = await apiClient.post<
+      BaseResponseWithData<ShareResponseData>
+    >("/shares", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
 
-    const host = window.location.origin;
-    return formatShareResponse(response.share_id, host);
+    return response;
   },
 
   async getShares(
@@ -93,8 +94,12 @@ export const sharesService = {
     return apiClient.get<SharesListResponse>(`/shares?${params.toString()}`);
   },
 
-  async getShareDetail(shareId: string): Promise<ShareDetailResponse> {
-    return apiClient.get<ShareDetailResponse>(`/shares/${shareId}`);
+  async getShareDetail(
+    shareId: string
+  ): Promise<BaseResponseWithData<ShareDetailData>> {
+    return apiClient.get<BaseResponseWithData<ShareDetailData>>(
+      `/shares/${shareId}`
+    );
   },
 
   async deleteShare(shareId: string): Promise<MessageResponse> {

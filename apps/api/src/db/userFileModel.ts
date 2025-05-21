@@ -1,4 +1,4 @@
-import { and, count, eq, lt, ne } from "drizzle-orm";
+import { and, count, desc, eq, lt, ne, not, SQLWrapper } from "drizzle-orm";
 import { db } from ".";
 import { userFiles } from "./schema";
 
@@ -8,6 +8,33 @@ interface UserFile {
   jsonId: number;
   expiredAt: number;
   isShared: number;
+}
+
+function condition(userId: string, expiredOnly: boolean, sharedOnly: boolean) {
+  // Build the where conditions
+  const baseCondition = eq(userFiles.userId, userId);
+
+  // Create filter conditions
+  let filterCondition = undefined;
+  const expiredCondition = and(
+    lt(userFiles.expiredAt, Date.now()),
+    ne(userFiles.expiredAt, 0)
+  );
+
+  if (expiredOnly) {
+    // Expired files: expiredAt < now AND expiredAt != 0
+    filterCondition = expiredCondition;
+  } else if (sharedOnly) {
+    // Shared files: isShared = 1
+    // except expired files
+
+    filterCondition = and(
+      eq(userFiles.isShared, 1),
+      not(expiredCondition as SQLWrapper)
+    );
+  }
+
+  return { baseCondition, filterCondition };
 }
 
 export class UserFileModel {
@@ -24,22 +51,11 @@ export class UserFileModel {
     expiredOnly: boolean,
     sharedOnly: boolean
   ) {
-    // Build the where conditions
-    const baseCondition = eq(userFiles.userId, userId);
-
-    // Create filter conditions
-    let filterCondition = undefined;
-
-    if (expiredOnly) {
-      // Expired files: expiredAt < now AND expiredAt != 0
-      filterCondition = and(
-        lt(userFiles.expiredAt, Date.now()),
-        ne(userFiles.expiredAt, 0)
-      );
-    } else if (sharedOnly) {
-      // Shared files: isShared = 1
-      filterCondition = eq(userFiles.isShared, 1);
-    }
+    const { baseCondition, filterCondition } = condition(
+      userId,
+      expiredOnly,
+      sharedOnly
+    );
 
     // Combine base condition with filter (if any)
     const whereCondition = filterCondition
@@ -52,6 +68,7 @@ export class UserFileModel {
       .from(userFiles)
       .where(whereCondition)
       .limit(pageSize)
+      .orderBy(desc(userFiles.updatedAt))
       .offset((page - 1) * pageSize);
 
     return userFilesList;
@@ -109,22 +126,11 @@ export class UserFileModel {
     expiredOnly: boolean,
     sharedOnly: boolean
   ) {
-    // Build the where conditions
-    const baseCondition = eq(userFiles.userId, userId);
-
-    // Create filter conditions
-    let filterCondition = undefined;
-
-    if (expiredOnly) {
-      // Expired files: expiredAt < now AND expiredAt != 0
-      filterCondition = and(
-        lt(userFiles.expiredAt, Date.now()),
-        ne(userFiles.expiredAt, 0)
-      );
-    } else if (sharedOnly) {
-      // Shared files: isShared = 1
-      filterCondition = eq(userFiles.isShared, 1);
-    }
+    const { baseCondition, filterCondition } = condition(
+      userId,
+      expiredOnly,
+      sharedOnly
+    );
 
     // Combine base condition with filter (if any)
     const whereCondition = filterCondition

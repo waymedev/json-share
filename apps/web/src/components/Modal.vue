@@ -62,7 +62,7 @@
                       <span
                         class="block text-sm font-medium text-gray-600"
                         :title="shareLink"
-                        >{{ truncatedLink }}</span
+                        >{{ shareLink }}</span
                       >
                     </div>
                     <button
@@ -95,7 +95,6 @@
 
 <script setup lang="ts">
 import { CheckCircle, Copy } from "lucide-vue-next";
-import { computed } from "vue";
 
 interface Props {
   show: boolean;
@@ -110,20 +109,6 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
-
-// TODO 截断分享链接
-const truncatedLink = computed(() => {
-  if (!props.shareLink) return "";
-
-  return props.shareLink;
-
-  //   const url = props.shareLink;
-  //   if (url.length <= 50) return url;
-
-  //   const start = url.slice(0, 25);
-  //   const end = url.slice(-25);
-  //   return `${start}...${end}`;
-});
 
 const handleClose = () => {
   emit("close");

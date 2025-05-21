@@ -1,4 +1,20 @@
-import 'dotenv/config';
+import "dotenv/config";
+import { Logger } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-// You can specify any property from the mysql2 connection options
-export const db = drizzle({ connection: { uri: process.env.DATABASE_URL }});
+import mysql from "mysql2/promise";
+
+// Custom SQL logger for debugging
+const sqlLogger: Logger = {
+  logQuery(query, params) {
+    console.log("---SQL Query---");
+    console.log("SQL:", query);
+    console.log("Params:", params);
+    console.log("---------------");
+  },
+};
+
+// Create the connection
+const connection = mysql.createPool(process.env.DATABASE_URL!);
+
+// Initialize drizzle with the connection and logger
+export const db = drizzle(connection, { logger: sqlLogger });
