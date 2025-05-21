@@ -4,16 +4,16 @@ This document contains a detailed list of actionable improvement tasks for the J
 
 ## Architecture Improvements
 
-1. [x] Resolve backend technology stack inconsistencies
-   - [x] Update README.md to reflect that Koa is used instead of Express
-   - [x] Update README.md to reflect that MySQL is used instead of MongoDB
-   - [x] Ensure consistent naming throughout documentation
+1. [ ] Resolve backend technology stack inconsistencies
+   - [ ] Update README.md to reflect that Koa is used instead of Express
+   - [ ] Update README.md to reflect that MySQL is used instead of MongoDB
+   - [ ] Ensure consistent naming throughout documentation
 
-2. [x] Improve database design and implementation
-   - [x] Add foreign key constraints between json_files and user_files tables
-   - [x] Implement proper indexing for frequently queried fields
-   - [x] Add database connection pooling configuration
-   - [x] Add error handling for database connection failures
+2. [ ] Improve database design and implementation
+   - [ ] Add foreign key constraints between json_files and user_files tables
+   - [ ] Implement proper indexing for frequently queried fields
+   - [ ] Add database connection pooling configuration
+   - [ ] Add error handling for database connection failures
 
 3. [ ] Enhance API architecture
    - [ ] Implement RESTful API design patterns consistently

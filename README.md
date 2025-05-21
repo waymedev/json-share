@@ -2,19 +2,37 @@
 
 一个具备管理与保存功能的高级 JSON 分享服务。
 
-## 系统架构
+[系统简介](https://github.com/waymedev/json-share/blob/main/docs/系统简介.md)
 
-### 前端 (Vue 3 + TypeScript + Vite)
+[AI 感想](https://github.com/waymedev/json-share/blob/main/docs/AI使用感想.md)
 
-- 使用 Tailwind CSS 进行样式设计
-- 使用 Vue Router 实现路由管理
-- 使用 Pinia 进行状态管理
 
-### 后端 (Node.js + Express + MongoDB)
+```
+# 主页面
+http://loaclhost:8080
 
-- 使用 Node.js 和 Koa 构建 RESTful API
-- 使用 MySQL 存储 JSON 数据和用户信息
-- 使用 UUID 进行简化的用户标识
+# swagger 文档
+http://localhost:3000/docs
+
+```
+
+## 本地开发
+
+```bash
+cd apps/web
+pnpm install
+pnpm run dev
+
+cd apps/api
+pnpm install
+pmpm run dev
+```
+
+后端接口单元测试&数据库集成测试
+```bash
+cd app/api
+pnpm test
+```
 
 ## Docker 部署
 
@@ -34,6 +52,8 @@ docker-compose up -d web
 docker-compose up -d api
 ```
 
+`init.sql`文件与`docker-compose.ymal`在同一文件
+
 ### 手动构建镜像
 
 ```bash
@@ -46,94 +66,35 @@ cd apps/api
 docker build -t json-share-api .
 ```
 
-### CI/CD
+## 1. 项目概览
+| 维度 | 内容 |
+| --- | --- |
+| **项目目标** | 一款容器化部署的 **JSON 分享平台**，支持上传、分享、预览、保存、副本管理与过期清理 |
+| **核心技术** | Vue 3 · Pinia · TypeScript · Koa2 · MySQL · Docker Compose |
+| **辅助工具** | ChatGPT (o4-mini-high)、JetBrains Junie、v0.dev、Cursor.dev |
 
-项目配置了 GitHub Actions 工作流，自动构建并发布 Docker 镜像到 GitHub Container Registry：
+## 2. 工具链 & 角色分工
+| 环节 | 工具 & 版本 | 关键价值                      |
+| --- | --- |---------------------------|
+| **需求拆解** | ChatGPT + Junie (任务面板) | GPT 提炼需求主干，Junie 自动生成可勾选子任务 |
+| **UI 原型 / 低代码** | v0.dev | 生成首页、详情页、用户保存页雏形          |
+| **DB & API 设计** | ChatGPT (o4-mini-high) | 生成 Drizzle ORM 初始化脚本及 Swagger 摘要 |
+| **编码 & 重构** | Cursor IDE | AI 代码补全   |
+| **测试** | GPT 生成测试计划 → Cursor 生成 Vitest 文件 | service 层 & DAO 层覆盖 |
+| **CI/CD & Docker** | Cursor + GitHub Actions | actions/setup-buildx 打多平台镜像，自动推送 GHCR |
 
-- `json-share-web`: 前端镜像
-- `json-share-api`: 后端镜像
 
-镜像会在以下情况下自动构建：
-
-- 推送到 main 分支时（如果有相关文件更改）
-- 发布新版本时
-- 手动触发工作流
-
-## 功能实现
-
-### 1. 用户标识系统
-
-- 前端首次访问时生成 UUID，存储在 LocalStorage 中
-- 每次请求时通过请求头 `X-User-ID` 将 UUID 发送给后端
-- 后端根据此 UUID 识别用户，管理其分享和保存的内容
-
-### 2. JSON 上传与分享
-
-- 文件上传组件，限制只接受 `.json` 文件
-- 实现文件验证，确保上传的是有效的 JSON 文件
-- 上传成功后，根据用户选择的有效期（1 天、7 天、永久）生成唯一分享链接
-- 分享链接格式：`/share/{unique-id}`
-
-### 3. JSON 预览与下载
-
-- 实现带有语法高亮和可折叠树状视图的 JSON 预览功能
-  - 使用 `vue-json-viewer` 或自定义组件实现
-  - 针对大型 JSON (5-10MB) 实现懒加载和虚拟滚动优化
-- 提供下载原始 JSON 文件的功能
-- 实现"保存此 JSON"功能，允许访问者将 JSON 保存到自己的列表中
-- 处理链接过期或无效的情况，显示相应提示
-
-### 4. "我的分享"管理
-
-- 实现用户分享列表页面，显示：
-  - 分享链接
-  - JSON 文件名
-  - 创建时间
-  - 过期时间
-- 提供取消分享的功能
-
-## 数据模型
-
-## API 设计
-
-### 分享相关
-
-- `POST /api/shares` - 上传并创建分享
-- `GET /api/shares` - 获取分享列表
-- `GET /api/shares/:share_id` - 获取单个分享内容
-- `DELETE /api/shares/:id` - 删除特定分享
-
-### 收藏相关
-
-- `POST /api/saved` - 收藏文件
-- `GET /api/saved` - 获取收藏列表
-- `GET /api/saved/:id` - 查看收藏文件
-- `PUT /api/saved/:id` - 更新收藏文件
-- `DELETE /api/saved/:id` - 删除已保存的 JSON
-
-## 前端路由设计
-
-- `/` - 首页，上传 JSON 并创建分享
-- `/share/:id` - 分享预览页面
-- `/library` - 我的分享管理页面
-
-## 性能优化
-
-针对中等大小 JSON (5-10MB)的预览性能优化：
-
-1. 实现虚拟滚动，只渲染可视区域的 JSON 节点
-2. 实现懒加载，初始只展开第一层节点
-3. 使用 Web Worker 进行 JSON 解析，避免阻塞主线程
-4. 实现分块渲染，避免一次性渲染大量 DOM 节点
-
-## 实现步骤
-
-1. 设置项目结构，添加必要的依赖
-2. 实现后端 API 和数据库模型
-3. 实现前端用户界面和交互逻辑
-4. 实现 JSON 预览组件，优化大型 JSON 的性能
-5. 实现用户标识系统
-6. 测试和优化
+## 4. 已实现功能对照
+| 模块 | 进度 | 亮点                                    |
+| --- | -- |---------------------------------------|
+| 上传 & 分享 | ✅ | 文件校验&过期无效                             |
+| JSON 预览 | ✅ | 语法高亮、折叠、第三方库虚拟滚动                      |
+| 保存副本 | ✅ | 引入 `json_file` 表，保证跨用户隔离              |
+| 我的分享 / 我的 JSON | ✅ | 列表 + 删除                               |
+| 简化登录态 | ✅ | 匿名 UUID + `X-User-ID` |
+| 过期清理 |  | CRON 每小时 + 惰性校验双保险                    |
+| CI / Docker | ✅ | `docker-compose up -d` 一键起 3 服务       |
+| 单元 / 集成测试 | 82 % 覆盖 | DAO Mock + Supertest 打 API            |
 
 ## 技术栈总结
 
@@ -149,4 +110,4 @@ docker build -t json-share-api .
 
 - Node.js + Koa
 - MySQL
-- JWT/UUID
+- UUID
