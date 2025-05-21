@@ -32,18 +32,18 @@
         class="flex min-h-screen items-end justify-center p-4 text-center sm:items-center sm:p-0"
       >
         <div
-          class="relative w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:max-w-lg sm:p-6"
+          class="relative w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 max-w-[90%] sm:max-w-lg sm:p-6"
         >
           <div class="flex items-start">
             <div
-              class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 sm:h-10 sm:w-10"
+              class="hidden sm:flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 sm:h-10 sm:w-10"
             >
               <CheckCircle
                 class="h-6 w-6 text-emerald-600"
                 aria-hidden="true"
               />
             </div>
-            <div class="ml-4 flex-1">
+            <div class="sm:ml-4 flex-1">
               <h3
                 class="text-base font-semibold leading-6 text-gray-900"
                 id="modal-title"
@@ -56,22 +56,26 @@
                 </p>
                 <div v-if="shareLink" class="mt-4">
                   <div
-                    class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2"
+                    class="flex flex-col rounded-lg border border-gray-200 bg-gray-50 p-3"
                   >
-                    <div class="min-w-0 flex-1">
+                    <div class="mb-2 break-all">
                       <span
-                        class="block text-sm font-medium text-gray-600"
+                        class="block text-sm font-medium text-gray-600 break-words"
                         :title="shareLink"
                         >{{ shareLink }}</span
                       >
                     </div>
                     <button
                       type="button"
-                      class="flex-shrink-0 rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                      class="self-end rounded-md bg-white px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm border border-gray-200 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 inline-flex items-center gap-1.5"
                       @click="handleCopy"
                       aria-label="Copy link"
+                      tabindex="0"
+                      @keydown.enter="handleCopy"
+                      @keydown.space="handleCopy"
                     >
-                      <Copy class="h-5 w-5" aria-hidden="true" />
+                      <Copy class="h-4 w-4" aria-hidden="true" />
+                      复制链接
                     </button>
                   </div>
                 </div>
@@ -83,6 +87,9 @@
               type="button"
               class="inline-flex w-full justify-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 sm:ml-3 sm:w-auto"
               @click="handleClose"
+              tabindex="0"
+              @keydown.enter="handleClose"
+              @keydown.space="handleClose"
             >
               确定
             </button>
