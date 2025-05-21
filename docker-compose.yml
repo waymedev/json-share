@@ -24,7 +24,7 @@ services:
       - PORT=3000
       - DATABASE_URL=mysql://user:password@db:3306/json_share
     volumes:
-      - ./apps/api/logs:/app/logs
+      - ./logs:/app/logs
     networks:
       - json-share-network
     restart: unless-stopped
@@ -40,7 +40,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./apps/api/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - json-share-network
     restart: unless-stopped

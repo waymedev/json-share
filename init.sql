@@ -1,35 +1,37 @@
 -- MySQL initialization script for JSON-Share application
 
--- Create database if it doesn't exist
+-- Create database if not exists
 CREATE DATABASE IF NOT EXISTS json_share;
 USE json_share;
 
--- JSON File Table (must be created first due to foreign key reference)
+-- Create raw_json table
 CREATE TABLE IF NOT EXISTS raw_json (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    json_content JSON NOT NULL,
-    ref_count INT NOT NULL DEFAULT 1,
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  json_content JSON NOT NULL,
+  ref_count INT NOT NULL DEFAULT 1,
+  PRIMARY KEY (id)
+);
 
-    -- Index for better query performance
-    INDEX idx_ref_count (ref_count)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Create index on ref_count
+CREATE INDEX idx_ref_count ON raw_json (ref_count);
 
--- User File Table
+-- Create user_files table
 CREATE TABLE IF NOT EXISTS user_files (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    file_name VARCHAR(255) NOT NULL,
-    user_id VARCHAR(36) NOT NULL,
-    json_id BIGINT NOT NULL,
-    share_id VARCHAR(64),
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    expired_at BIGINT NOT NULL DEFAULT 0,
-    is_shared BOOLEAN NOT NULL DEFAULT FALSE,
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  file_name VARCHAR(255) NOT NULL,
+  user_id VARCHAR(36) NOT NULL,
+  json_id BIGINT NOT NULL,
+  share_id VARCHAR(64),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expired_at BIGINT NOT NULL,
+  is_shared TINYINT NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+);
 
-    -- Indexes for better query performance
-    INDEX idx_user_id (user_id),
-    UNIQUE INDEX idx_share_id (share_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Create indexes
+CREATE INDEX idx_user_id ON user_files (user_id);
+CREATE UNIQUE INDEX idx_share_id ON user_files (share_id);
 
 -- Add comments to explain the tables
 -- user_files: Stores metadata about user's JSON files including sharing status and expiration
