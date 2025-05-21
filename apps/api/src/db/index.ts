@@ -3,6 +3,7 @@ import { Logger } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
 // Custom SQL logger for debugging
 const sqlLogger: Logger = {
   logQuery(query, params) {
