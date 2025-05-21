@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  web:
+    image: ghcr.io/waymedev/json-share/json-share-web:main
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    networks:
+      - json-share-network
+    restart: unless-stopped
+
+  api:
+    image: ghcr.io/waymedev/json-share/json-share-api:main
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=mysql://user:password@db:3306/json_share
+    volumes:
+      - ./apps/api/logs:/app/logs
+    networks:
+      - json-share-network
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_DATABASE=json_share
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+      - MYSQL_ROOT_PASSWORD=rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./apps/api/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - json-share-network
+    restart: unless-stopped
+
+networks:
+  json-share-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
