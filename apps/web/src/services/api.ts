@@ -7,8 +7,12 @@ interface ApiResponse<T> {
   message: string;
 }
 
+// Use environment variable if available, otherwise default to localhost for local development
+const apiBaseUrl =
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:3000/api";
+
 export const api = axios.create({
-  baseURL: "http://127.0.0.1:3000/api",
+  baseURL: apiBaseUrl,
   headers: {
     "Content-Type": "application/json",
   },
