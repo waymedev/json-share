@@ -12,8 +12,12 @@ RUN npm install
 # 复制源代码
 COPY . .
 
-# 构建应用（忽略TypeScript错误）
-RUN npm run build:ignore-errors
+# 添加API基本URL参数
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
+# 构建应用
+RUN npm run build
 
 # Production stage
 FROM nginx:alpine AS production

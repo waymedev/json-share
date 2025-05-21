@@ -410,6 +410,7 @@ const copyShareLink = (file: SavedItem): void => {
   if (!file.is_shared || file.is_expired) return;
 
   const shareUrl = `${window.location.origin}/share/${file.share_id}`;
+  console.log("shareUrl", shareUrl);
   navigator.clipboard
     .writeText(shareUrl)
     .then(() => {
