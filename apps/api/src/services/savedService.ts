@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { RawJsonModel } from "../db/rawJsonModel";
 import { UserFileModel } from "../db/userFileModel";
-import { FileData } from "../utils/Response";
+import { FileData, PaginationData } from "../utils/Response";
 import { isExpired } from "../utils/commonUtils";
 import { ErrorType } from "../utils/errorHandler";
 import {
@@ -74,7 +74,7 @@ export class SavedService {
     size: number,
     expiredOnly: boolean,
     sharedOnly: boolean
-  ): Promise<ServiceResult<{ data: FileData[]; totalRecords: number }>> {
+  ): Promise<ServiceResult<PaginationData<FileData>>> {
     try {
       const userFiles = await ShareService.getUserFiles(
         userId,
@@ -99,7 +99,15 @@ export class SavedService {
       );
 
       return successResult(
-        { data: userFiles.data?.data || [], totalRecords },
+        {
+          list: userFiles.data?.list || [],
+          pagination: {
+            page: page,
+            page_size: size,
+            total: totalRecords,
+            total_pages: Math.ceil(totalRecords / size),
+          },
+        },
         "Saved files retrieved successfully"
       );
     } catch (error) {

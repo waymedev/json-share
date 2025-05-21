@@ -496,8 +496,8 @@ describe("ShareService", () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.data?.totalRecords).toBe(1);
-      expect(result.data?.data).toHaveLength(1);
+      expect(result.data?.pagination.total).toBe(1);
+      expect(result.data?.list).toHaveLength(1);
       expect(UserFileModel.getUserFileListByPage).toHaveBeenCalledWith(
         mockUserId,
         1,

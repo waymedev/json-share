@@ -55,20 +55,21 @@ api.interceptors.response.use(
       data: response.data,
     });
 
-    // Handle standard API response format
-    const apiResponse = response.data as ApiResponse<any>;
+    // // Handle standard API response format
+    // const apiResponse = response.data as ApiResponse<any>;
 
-    // Check if code is not 200
-    if (apiResponse.code !== 200) {
-      return Promise.reject({
-        message: apiResponse.message,
-        code: apiResponse.code,
-        response: response,
-      });
-    }
+    // // Check if code is not 200
+    // if (apiResponse.code !== 200) {
+    //   return Promise.reject({
+    //     message: apiResponse.message,
+    //     code: apiResponse.code,
+    //     response: response,
+    //   });
+    // }
 
-    // Return only the data field for success responses
-    return apiResponse.data;
+    // // Return only the data field for success responses
+    // return apiResponse.data;
+    return response.data;
   },
   (error) => {
     if (error.response) {

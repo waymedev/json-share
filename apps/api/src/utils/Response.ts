@@ -12,11 +12,13 @@ export interface ApiResponse<T> {
  * 分页数据接口
  */
 export interface PaginationData<T> {
-  items: T[];
-  total: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
+  list: T[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+  };
 }
 
 /**

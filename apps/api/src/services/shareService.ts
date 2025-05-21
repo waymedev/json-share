@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { db } from "../db";
 import { RawJsonModel } from "../db/rawJsonModel";
 import { UserFileModel } from "../db/userFileModel";
-import { FileData } from "../utils/Response";
+import { FileData, PaginationData } from "../utils/Response";
 import { isExpired } from "../utils/commonUtils";
 import { ErrorType } from "../utils/errorHandler";
 import {
@@ -207,7 +207,7 @@ export class ShareService {
     size: number,
     expiredOnly: boolean,
     sharedOnly: boolean
-  ): Promise<ServiceResult<{ data: FileData[]; totalRecords: number }>> {
+  ): Promise<ServiceResult<PaginationData<FileData>>> {
     try {
       const userFiles = await UserFileModel.getUserFileListByPage(
         userId,
@@ -239,8 +239,16 @@ export class ShareService {
       });
 
       return successResult(
-        { data: shareFileData, totalRecords },
-        "Shared files retrieved successfully"
+        {
+          list: shareFileData,
+          pagination: {
+            page: page,
+            page_size: size,
+            total: totalRecords,
+            total_pages: Math.ceil(totalRecords / size),
+          },
+        },
+        "Shared files retrieved succes  sfully"
       );
     } catch (error) {
       console.error("Error getting shared files:", error);

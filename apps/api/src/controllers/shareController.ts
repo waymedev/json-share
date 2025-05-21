@@ -98,19 +98,7 @@ router.get("/shares", async (ctx) => {
   );
 
   if (result.success && result.data) {
-    const { data, totalRecords } = result.data;
-    // total page
-    const totalPages = Math.ceil(totalRecords / size);
-    const responseData = {
-      data,
-      pagination: {
-        page,
-        size,
-        totalRecords,
-        totalPages,
-      },
-    };
-    ctx.body = successResponse(responseData, result.message);
+    ctx.body = successResponse(result.data, result.message);
   } else {
     // 使用服务返回的错误类型
     handleApiError(

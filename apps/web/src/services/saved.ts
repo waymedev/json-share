@@ -20,8 +20,9 @@ export interface SavedItem {
   created_at: string;
   updated_at: string;
   share_id: string;
+  json_id: number;
   is_shared: boolean;
-  expiration_days: number;
+  is_expired: boolean;
 }
 
 export interface SavedListData {
@@ -53,7 +54,7 @@ export const savedService = {
     size: number = 20,
     expiredOnly?: boolean,
     sharedOnly?: boolean
-  ): Promise<PaginatedListResponse<SavedListData>> {
+  ): Promise<PaginatedListResponse<SavedItem>> {
     const params = new URLSearchParams();
     params.append("page", page.toString());
     params.append("size", size.toString());
@@ -66,7 +67,7 @@ export const savedService = {
       params.append("shared_only", sharedOnly.toString());
     }
 
-    return apiClient.get<PaginatedListResponse<SavedListData>>(
+    return apiClient.get<PaginatedListResponse<SavedItem>>(
       `/saved?${params.toString()}`
     );
   },

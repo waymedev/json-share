@@ -6,6 +6,7 @@ import Router from "koa-router";
 import { koaSwagger } from "koa2-swagger-ui";
 import path from "path";
 import yaml from "yamljs";
+import savedRouter from "./controllers/savedController";
 import shareRouter from "./controllers/shareController";
 import { errorHandler } from "./middlewares";
 import { logger } from "./utils/logger";
@@ -56,6 +57,7 @@ app.use(errorHandler(env));
 
 // Routes
 router.use(shareRouter.routes(), shareRouter.allowedMethods());
+router.use(savedRouter.routes(), savedRouter.allowedMethods());
 app.use(router.routes());
 
 // Middleware
