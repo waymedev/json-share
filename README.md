@@ -6,15 +6,6 @@
 
 [AI 感想](https://github.com/waymedev/json-share/blob/main/docs/AI使用感想.md)
 
-```
-# 主页面
-http://loaclhost:8080
-
-# swagger 文档
-http://localhost:3000/docs
-
-```
-
 ## 本地开发
 
 ```bash
@@ -24,7 +15,16 @@ pnpm run dev
 
 cd apps/api
 pnpm install
-pmpm run dev
+pnpm run dev
+```
+
+```
+# 主页面
+http://loaclhost:5173
+
+# swagger 文档
+http://localhost:3000/docs
+
 ```
 
 后端接口单元测试&数据库集成测试
@@ -41,7 +41,7 @@ pnpm test
 ### 使用 Docker Compose 本地运行
 
 ```bash
-# 修改 web 容器公网IP
+# 修改 docker-compose.yaml web 容器公网IP
 VITE_API_BASE_URL=
 
 # 构建并启动所有服务
@@ -56,7 +56,7 @@ docker-compose up -d api
 docker-compose up -d db
 ```
 
-`init.sql`文件与`docker-compose.ymal`在同一文件
+注意： 保证`init.sql`文件与`docker-compose.yaml`在同一文件，防止数据库初始化失败
 
 ### 手动构建镜像
 
@@ -82,9 +82,9 @@ docker build -t json-share-api .
 
 | 环节                 | 工具 & 版本                                | 关键价值                                         |
 | -------------------- | ------------------------------------------ | ------------------------------------------------ |
-| **需求拆解**         | ChatGPT + Junie (任务面板)                 | GPT 提炼需求主干，Junie 自动生成可勾选子任务     |
+| **需求拆解**         | ChatGPT + Junie (任务拆分)                 | GPT 提炼需求主干，Junie 自动生成子任务列表       |
 | **UI 原型 / 低代码** | v0.dev                                     | 生成首页、详情页、用户保存页雏形                 |
-| **DB & API 设计**    | ChatGPT (o4-mini-high)                     | 生成 Drizzle ORM 初始化脚本及 Swagger 摘要       |
+| **DB & API 设计**    | ChatGPT (o4-mini-high)                     | Drizzle ORM 初始化脚本及 Swagger 摘要            |
 | **编码 & 重构**      | Cursor IDE                                 | AI 代码补全                                      |
 | **测试**             | GPT 生成测试计划 → Cursor 生成 Vitest 文件 | service 层 & DAO 层覆盖                          |
 | **CI/CD & Docker**   | Cursor + GitHub Actions                    | actions/setup-buildx 打多平台镜像，自动推送 GHCR |
@@ -116,4 +116,3 @@ docker build -t json-share-api .
 
 - Node.js + Koa
 - MySQL
-- UUID
