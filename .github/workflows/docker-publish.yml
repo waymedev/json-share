@@ -37,7 +37,7 @@ jobs:
 
   build-and-push-api:
     needs: api-filter
-    if: needs.api-filter.outputs.changed == 'true'
+    if: needs.api-filter.outputs.my_folder == 'true'
     name: Build and Push API Image
     runs-on: ubuntu-latest
     permissions:
@@ -86,7 +86,7 @@ jobs:
 
   build-and-push-web:
     needs: web-filter
-    if: needs.web-filter.outputs.changed == 'true'
+    if: needs.web-filter.outputs.my_folder == 'true'
     name: Build and Push Web Image
     runs-on: ubuntu-latest
     permissions:
