@@ -12,7 +12,7 @@ jobs:
   api-filter:
     runs-on: ubuntu-latest
     outputs:
-      changed: ${{ steps.changed.outputs.my_folder }}
+      my_folder: ${{ steps.api-filter.outputs.my_folder }}
     steps:
       - uses: actions/checkout@v4
       - id: api-filter
@@ -22,22 +22,9 @@ jobs:
             my_folder:
               - 'apps/api/**'
 
-  web-filter:
-    runs-on: ubuntu-latest
-    outputs:
-      changed: ${{ steps.changed.outputs.my_folder }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: web-filter
-        uses: dorny/paths-filter@v2
-        with:
-          filters: |
-            my_folder:
-              - 'apps/web/**'
-
   build-and-push-api:
     needs: api-filter
-    if: needs.api-filter.outputs.my_folder == 'true'
+    if: ${{ contains(needs.api-filter.outputs.my_folder, 'true') }}
     name: Build and Push API Image
     runs-on: ubuntu-latest
     permissions:
@@ -84,9 +71,22 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  web-filter:
+    runs-on: ubuntu-latest
+    outputs:
+      my_folder: ${{ steps.web-filter.outputs.my_folder }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: web-filter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            my_folder:
+              - 'apps/web/**'
+
   build-and-push-web:
     needs: web-filter
-    if: needs.web-filter.outputs.my_folder == 'true'
+    if: ${{ contains(needs.web-filter.outputs.my_folder, 'true') }}
     name: Build and Push Web Image
     runs-on: ubuntu-latest
     permissions:
